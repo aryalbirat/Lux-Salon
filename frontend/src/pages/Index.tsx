@@ -1,28 +1,41 @@
-
 import { useState } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { HeroSection } from '@/components/HeroSection';
 import { ServicesSection } from '@/components/ServicesSection';
+import { FeaturedServices } from '@/components/FeaturedServices';
 import { TestimonialsSection } from '@/components/TestimonialsSection';
 import { BookingModal } from '@/components/BookingModal';
+import { AuthModal } from '@/components/AuthModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { MapPin, Phone, Mail, Clock, Instagram, Facebook, Twitter } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
   const [showBookingModal, setShowBookingModal] = useState(false);
-  const [userType, setUserType] = useState<'client' | 'admin' | 'guest'>('guest');
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [preselectedService, setPreselectedService] = useState<string | null>(null);
+  const { login } = useAuth();
+  
+  const handleAuthSuccess = (user: any, token: string) => {
+    login(user, token);
+  };
 
   return (
     <div className="min-h-screen bg-white">
       <Navigation 
-        userType={userType} 
-        onLogin={() => setUserType('client')}
-        onLogout={() => setUserType('guest')}
+        onOpenAuthModal={() => setShowAuthModal(true)}
+        onOpenBookingModal={() => setShowBookingModal(true)}
       />
-      
-      <HeroSection />
-      <ServicesSection />
+      <HeroSection onBookAppointment={() => setShowBookingModal(true)} />
+      <ServicesSection onBookService={(serviceName) => {
+        setShowBookingModal(true);
+        setPreselectedService(serviceName);
+      }} />
+      <FeaturedServices onBookService={(serviceName) => {
+        setShowBookingModal(true);
+        setPreselectedService(serviceName);
+      }} />
       <TestimonialsSection />
       
       {/* Gallery Section */}
@@ -141,7 +154,7 @@ const Index = () => {
             <Button 
               size="lg"
               onClick={() => setShowBookingModal(true)}
-              className="bg-salon-gold hover:bg-salon-gold/90 text-white font-semibold px-8"
+              className="bg-purple-500 hover:bg-salon-lavender text-salon-lavender hover:text-white border border-salon-lavender font-semibold px-8"
             >
               Book Your Appointment Now
             </Button>
@@ -182,11 +195,16 @@ const Index = () => {
             <p>&copy; 2024 LuxSalon. All rights reserved.</p>
           </div>
         </div>
-      </footer>
-
-      <BookingModal 
+      </footer>      <BookingModal 
         isOpen={showBookingModal} 
-        onClose={() => setShowBookingModal(false)} 
+        onClose={() => { setShowBookingModal(false); setPreselectedService(null); }} 
+        preselectedService={preselectedService}
+        onOpenAuthModal={() => setShowAuthModal(true)}
+      />
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+        onSuccess={handleAuthSuccess}
       />
     </div>
   );

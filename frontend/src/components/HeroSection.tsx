@@ -1,8 +1,7 @@
-
 import { Button } from '@/components/ui/button';
 import { Calendar, Star, Users } from 'lucide-react';
 
-export const HeroSection = () => {
+export const HeroSection = ({ onBookAppointment }: { onBookAppointment?: () => void }) => {
   return (
     <section className="relative min-h-screen flex items-center gradient-bg overflow-hidden">
       {/* Background Pattern */}
@@ -29,6 +28,7 @@ export const HeroSection = () => {
               <Button 
                 size="lg" 
                 className="bg-salon-pink hover:bg-salon-pink/90 text-gray-800 font-semibold px-8 py-4 text-lg"
+                onClick={onBookAppointment}
               >
                 <Calendar className="mr-2 h-5 w-5" />
                 Book Appointment
@@ -36,7 +36,7 @@ export const HeroSection = () => {
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="border-salon-gold text-salon-gold hover:bg-salon-gold hover:text-white font-semibold px-8 py-4 text-lg"
+                className="border-salon-lavender text-salon-lavender bg-purple-500 hover:bg-salon-lavender hover:text-white font-semibold px-8 py-4 text-lg"
               >
                 View Services
               </Button>
@@ -44,16 +44,15 @@ export const HeroSection = () => {
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-8 text-center">
-              <div>
-                <div className="text-2xl font-bold text-salon-gold">500+</div>
+              <div>                <div className="text-2xl font-bold text-salon-lavender">500+</div>
                 <div className="text-sm text-gray-600">Happy Clients</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-salon-gold">15+</div>
+                <div className="text-2xl font-bold text-salon-lavender">15+</div>
                 <div className="text-sm text-gray-600">Expert Stylists</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-salon-gold">4.9</div>
+                <div className="text-2xl font-bold text-salon-lavender">4.9</div>
                 <div className="text-sm text-gray-600">Star Rating</div>
               </div>
             </div>
@@ -73,7 +72,7 @@ export const HeroSection = () => {
             {/* Floating Cards */}
             <div className="absolute -top-4 -left-4 bg-white rounded-2xl shadow-xl p-4 animate-slide-in">
               <div className="flex items-center space-x-3">
-                <Star className="h-8 w-8 text-salon-gold fill-current" />
+                <Star className="h-8 w-8 text-salon-lavender fill-current" />
                 <div>
                   <div className="font-semibold text-gray-800">Premium Quality</div>
                   <div className="text-sm text-gray-600">5-Star Service</div>

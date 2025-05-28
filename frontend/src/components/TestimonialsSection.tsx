@@ -73,7 +73,7 @@ export const TestimonialsSection = () => {
                   <Card className="max-w-4xl mx-auto border-0 shadow-xl bg-white/80 backdrop-blur-sm">
                     <CardContent className="p-8 md:p-12">
                       <div className="text-center">
-                        <Quote className="h-12 w-12 text-salon-gold mx-auto mb-6 opacity-60" />
+                        <Quote className="h-12 w-12 text-salon-lavender mx-auto mb-6 opacity-60" />
                         
                         <p className="text-xl md:text-2xl text-gray-700 italic mb-8 leading-relaxed">
                           "{testimonial.content}"
@@ -88,13 +88,12 @@ export const TestimonialsSection = () => {
                           <div className="text-left">
                             <div className="font-semibold text-lg text-gray-800">
                               {testimonial.name}
-                            </div>
-                            <div className="text-salon-gold font-medium">
+                            </div>                            <div className="text-salon-lavender font-medium">
                               {testimonial.service}
                             </div>
                             <div className="flex items-center mt-1">
                               {[...Array(testimonial.rating)].map((_, i) => (
-                                <Star key={i} className="h-4 w-4 text-salon-gold fill-current" />
+                                <Star key={i} className="h-4 w-4 text-salon-lavender fill-current" />
                               ))}
                             </div>
                           </div>
@@ -114,7 +113,7 @@ export const TestimonialsSection = () => {
                 key={index}
                 onClick={() => setCurrentIndex(index)}
                 className={`w-3 h-3 rounded-full transition-colors duration-200 ${
-                  index === currentIndex ? 'bg-salon-gold' : 'bg-gray-300'
+                  index === currentIndex ? 'bg-salon-lavender' : 'bg-gray-300'
                 }`}
               />
             ))}
