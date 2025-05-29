@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
@@ -65,7 +66,8 @@ export default {
         salon: {
           pink: "#F8BBD9",
           "pink-light": "#FDE2E7",
-          cream: "#FAF7F0",
+          cream: "#FFF5E5",
+          "cream-light": "#FFF9F0",
           lavender: "#E8D5FF",
           nice: "#C8A2C8",
           "peach-light": "#FFD8C2",
@@ -107,5 +109,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;

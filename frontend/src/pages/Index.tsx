@@ -88,7 +88,7 @@ const Index = () => {
           <div className="grid lg:grid-cols-2 gap-12">
             {/* Contact Info */}
             <div className="space-y-8">
-              <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+              <Card className="bg-[#FAF3E0] border-0 shadow-lg">
                 <CardContent className="p-6">
                   <h3 className="text-xl font-semibold mb-6">Get in Touch</h3>
                   <div className="space-y-4">
@@ -108,7 +108,7 @@ const Index = () => {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+              <Card className="bg-[#FAF3E0] border-0 shadow-lg">
                 <CardContent className="p-6">
                   <h3 className="text-xl font-semibold mb-6">Opening Hours</h3>
                   <div className="space-y-2">
@@ -154,7 +154,7 @@ const Index = () => {
             <Button 
               size="lg"
               onClick={() => setShowBookingModal(true)}
-              className="bg-purple-500 hover:bg-salon-lavender text-salon-lavender hover:text-white border border-salon-lavender font-semibold px-8"
+              className=" text-gray-800  bg-salon-pink hover:bg-salon-lavender hover:text-white border border-salon-lavender font-semibold px-8"
             >
               Book Your Appointment Now
             </Button>

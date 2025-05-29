@@ -1,10 +1,14 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { authAPI, appointmentAPI } from '@/services/api';
+import { useNotificationService } from '@/services/notifications';
 
 interface User {
   id: string;
@@ -24,6 +28,9 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
   const [activeTab, setActiveTab] = useState('login');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const notifications = useNotificationService();
 
   // Login form state
   const [loginData, setLoginData] = useState({
@@ -38,84 +45,35 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
     phone: '',
     password: '',
     confirmPassword: ''
-  });
-  const handleLoginSubmit = async (e: React.FormEvent) => {
+  });  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(loginData)
-      });
+      // Use the authAPI service instead of direct fetch call
+      const response = await authAPI.login(loginData.email, loginData.password);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to login');
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to login');
       }
 
-      // Store token and user data
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      // Use the login function from AuthContext
+      login(response.user, response.token);
       
-      toast({
-        title: 'Login successful!',
-        description: `Welcome back, ${data.user.name}!`,
-      });
+      // Process any pending booking
+      await processPendingBooking(response.token, response.user);
 
-      // Check for pending booking and process it
-      const pendingBooking = localStorage.getItem('pendingBooking');
-      if (pendingBooking) {
-        try {
-          // Parse the pending booking data
-          const bookingData = JSON.parse(pendingBooking);
-          
-          // Convert the date string back to a Date object
-          const apiBookingData = {
-            ...bookingData,
-            date: new Date(bookingData.date)
-          };
-          
-          // Submit the booking now that the user is authenticated
-          const bookResponse = await fetch('http://localhost:5000/api/appointments', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${data.token}`
-            },
-            body: JSON.stringify(apiBookingData)
-          });
-          
-          const bookResult = await bookResponse.json();
-          
-          if (bookResponse.ok && bookResult.success) {
-            // Remove the pending booking from localStorage
-            localStorage.removeItem('pendingBooking');
-            
-            // Show success message
-            toast({
-              title: 'Booking Completed',
-              description: `Your appointment has been successfully booked.`,
-            });
-          }
-        } catch (bookingError) {
-          console.error('Failed to process pending booking:', bookingError);
-          toast({
-            title: 'Booking Failed',
-            description: 'We couldn\'t complete your pending booking. Please try again.',
-            variant: 'destructive'
-          });
-        }
-      }
-
-      // Call the success callback
+      // Call the success callback if provided
       if (onSuccess) {
-        onSuccess(data.user, data.token);
-      }      onClose();
+        onSuccess(response.user, response.token);
+      }
+      
+      // Close the modal
+      onClose();
+      
+      // Redirect to dashboard
+      navigate('/dashboard');
+      
     } catch (error) {
       const errorMessage = error instanceof Error 
         ? error.message 
@@ -130,7 +88,46 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
       setIsLoading(false);
     }
   };
-
+    const processPendingBooking = async (token: string, user: User) => {
+    // Check for pending booking and process it
+    const pendingBooking = localStorage.getItem('pendingBooking');
+    if (pendingBooking) {
+      try {
+        // Parse the pending booking data
+        const bookingData = JSON.parse(pendingBooking);
+        
+        // Convert the date string back to a Date object
+        const apiBookingData = {
+          ...bookingData,
+          date: new Date(bookingData.date)
+        };
+        
+        // Use the appointmentAPI to create the booking
+        // This will automatically include the auth token from localStorage
+        // because of the API client interceptor
+        const response = await appointmentAPI.createAppointment(apiBookingData);
+        
+        if (response.success) {
+          // Remove the pending booking from localStorage
+          localStorage.removeItem('pendingBooking');
+          
+          // Show success message using the notification service
+          notifications.showSuccess(
+            'Booking Completed',
+            `Your appointment has been successfully booked for ${new Date(apiBookingData.date).toLocaleDateString()} at ${apiBookingData.time}.`
+          );
+        } else {
+          throw new Error(response.message || 'Failed to process booking');
+        }
+      } catch (bookingError) {
+        console.error('Failed to process pending booking:', bookingError);
+        notifications.showError(
+          'Booking Failed',
+          'We couldn\'t complete your pending booking. Please try again.'
+        );
+      }
+    }
+  };
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -147,81 +144,43 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name: registerData.name,
-          email: registerData.email,
-          phone: registerData.phone,
-          password: registerData.password
-        })
-      });
+      // Create user object with proper formatting for name
+      const userData = {
+        name: registerData.name,
+        email: registerData.email,
+        phone: registerData.phone.length >= 10 ? registerData.phone : '0000000000',
+        password: registerData.password
+      };
 
-      const data = await response.json();
+      // Use authAPI instead of direct fetch
+      const response = await authAPI.register(userData);
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to register');
-      }      // Store token and user data
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      
-      toast({
-        title: 'Registration successful!',
-        description: `Welcome to LuxSalon, ${data.user.name}!`,
-      });
-
-      // Check for pending booking and process it
-      const pendingBooking = localStorage.getItem('pendingBooking');
-      if (pendingBooking) {
-        try {
-          // Parse the pending booking data
-          const bookingData = JSON.parse(pendingBooking);
-          
-          // Convert the date string back to a Date object
-          const apiBookingData = {
-            ...bookingData,
-            date: new Date(bookingData.date)
-          };
-          
-          // Submit the booking now that the user is authenticated
-          const bookResponse = await fetch('http://localhost:5000/api/appointments', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${data.token}`
-            },
-            body: JSON.stringify(apiBookingData)
-          });
-          
-          const bookResult = await bookResponse.json();
-          
-          if (bookResponse.ok && bookResult.success) {
-            // Remove the pending booking from localStorage
-            localStorage.removeItem('pendingBooking');
-            
-            // Show success message
-            toast({
-              title: 'Booking Completed',
-              description: `Your appointment has been successfully booked.`,
-            });
-          }
-        } catch (bookingError) {
-          console.error('Failed to process pending booking:', bookingError);
-          toast({
-            title: 'Booking Failed',
-            description: 'We couldn\'t complete your pending booking. Please try again.',
-            variant: 'destructive'
-          });
-        }
+      if (!response.success) {
+        throw new Error(response.message || 'Failed to register');
       }
+      
+      // Use the login function from AuthContext
+      login(response.user, response.token);
+      
+      notifications.showSuccess(
+        'Registration successful!',
+        `Welcome to LuxSalon, ${response.user.name}!`
+      );
 
-      // Call the success callback
+      // Process any pending booking
+      await processPendingBooking(response.token, response.user);
+
+      // Call the success callback if provided
       if (onSuccess) {
-        onSuccess(data.user, data.token);
-      }onClose();
+        onSuccess(response.user, response.token);
+      }
+      
+      // Close the modal
+      onClose();
+      
+      // Redirect to dashboard
+      navigate('/dashboard');
+      
     } catch (error) {
       const errorMessage = error instanceof Error 
         ? error.message 

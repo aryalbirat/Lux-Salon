@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -83,18 +83,9 @@ const generatePricingPackages = (basePrice: string = '$85'): Package[] => {
   ];
 };
 
-export const BookingModal = ({ isOpen, onClose, onSuccess, preselectedService, onOpenAuthModal }: BookingModalProps) => {  const { user, isAuthenticated } = useAuth();
+export const BookingModal = ({ isOpen, onClose, onSuccess, preselectedService, onOpenAuthModal }: BookingModalProps) => {
+  const { user, isAuthenticated } = useAuth();
   const notifications = useNotificationService();
-  // Memoize notification functions to prevent them from causing re-renders
-  const showInfoNotification = useCallback((title: string, message: string) => {
-    notifications.showInfo(title, message);
-  }, [notifications]);
-  
-  // Create ref to track if component is mounted
-  const isMountedRef = useRef(true);
-  
-  // Ref to prevent redundant API calls for the same date/stylist combination
-  const prevFetchParamsRef = useRef<{date: string, stylistId: string} | null>(null);
   
   const [step, setStep] = useState(1);
   const [selectedService, setSelectedService] = useState('');
@@ -118,29 +109,19 @@ export const BookingModal = ({ isOpen, onClose, onSuccess, preselectedService, o
     phone: '',
     notes: ''
   });
-  // Initialize prevStepRef to track the previous step
-  const prevStepRef = useRef<number>(step);
-  
-  useEffect(() => {
-    // Update prevStepRef whenever step changes
-    prevStepRef.current = step;
-  }, [step]);
-  
+
   // Fetch staff members on component mount
   useEffect(() => {
     const fetchStaff = async () => {
       try {
         setLoading(true);
         const response = await staffAPI.getAllStaff();
-        console.log('Staff API Response:', response);
-        
         if (response?.success && response.data) {
           const formattedStaff = response.data.map((staff: { _id: string; name: string; specialty?: string }) => ({
             id: staff._id,
             name: staff.name,
             specialty: staff.specialty || 'Hair Specialist'
           }));
-          console.log('Formatted staff data:', formattedStaff);
           setStylists(formattedStaff);
         } else {
           // Fallback to default stylists if API call fails
@@ -178,94 +159,57 @@ export const BookingModal = ({ isOpen, onClose, onSuccess, preselectedService, o
         }));
       }
     }
-  }, [isOpen, user]);  // Ensure time slots are properly initialized when moving to date/time step 
-  
+  }, [isOpen, user]);
+
+  // Make sure availableTimeSlots is always initialized as a fallback
   useEffect(() => {
-    // Only run when first entering step 4
-    if (step === 4 && prevStepRef.current !== 4) {
-      // If we don't have a date and stylist yet, initialize with defaults
-      const needsTimeSlots = !selectedDate || !selectedStylistId || 
-                            (availableTimeSlots && availableTimeSlots.length === 0);
-                            
-      if (needsTimeSlots && !loading) {
-        console.log('Initializing default time slots for step 4');
-        setAvailableTimeSlots([...defaultTimeSlots]);
-      }
+    if (step === 4 && (!availableTimeSlots || !Array.isArray(availableTimeSlots) || availableTimeSlots.length === 0)) {
+      console.log('Ensuring time slots are available for step 4');
+      setAvailableTimeSlots([...defaultTimeSlots]);
     }
-    // Update our ref
-    prevStepRef.current = step;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, selectedDate, selectedStylistId, loading]);
-    // Keep track of previous values to avoid unnecessary API calls
-  const prevDateRef = useRef<Date | undefined>(undefined);
-  const prevStylistIdRef = useRef<string>('');
-  const timeSlotsRequestRef = useRef<{ fetching: boolean, key: string }>({ fetching: false, key: '' });
+  }, [step, availableTimeSlots]);
 
   // Fetch available time slots when date and stylist are selected
   useEffect(() => {
-    // Skip if either value is not set
-    if (!selectedDate || !selectedStylistId) {
-      return;
-    }
-
-    // Create a key representing this date/stylist combination
-    const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-    const fetchKey = `${formattedDate}_${selectedStylistId}`;
-
-    // Check if we already have data for this combination or a request is in progress
-    const dateChanged = !prevDateRef.current || prevDateRef.current.getTime() !== selectedDate.getTime();
-    const stylistChanged = prevStylistIdRef.current !== selectedStylistId;
-      // Only fetch if either date or stylist changed and no request is in progress
-    if ((dateChanged || stylistChanged) && !timeSlotsRequestRef.current.fetching) {
-      console.log(`Fetching time slots for date: ${formattedDate}, stylist: ${selectedStylistId}`);
-      
-      // Update our tracking refs
-      prevDateRef.current = selectedDate;
-      prevStylistIdRef.current = selectedStylistId;
-      timeSlotsRequestRef.current = { fetching: true, key: fetchKey };
-      
-      // Clear existing time slots while loading new ones
-      setLoading(true);
-      setAvailableTimeSlots([]);
-      
-      const fetchTimeSlots = async () => {
+    const fetchTimeSlots = async () => {
+      if (selectedDate && selectedStylistId) {
         try {
-          const response = await appointmentAPI.getAvailableTimeSlots(formattedDate, selectedStylistId);
+          setLoading(true);
+          setAvailableTimeSlots([]); // Clear previous slots when loading
+          const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+          console.log('Fetching time slots for:', formattedDate, selectedStylistId);
           
-          // Check if we're still on the same date/stylist (user may have changed selections)
-          if (
-            prevDateRef.current?.getTime() === selectedDate.getTime() && 
-            prevStylistIdRef.current === selectedStylistId
-          ) {
-            if (response?.success && Array.isArray(response.data)) {
+          try {
+            const response = await appointmentAPI.getAvailableTimeSlots(formattedDate, selectedStylistId);
+            console.log('Time slots API response:', response);
+            
+            if (response && response.success && Array.isArray(response.data)) {
               setAvailableTimeSlots(response.data);
-              console.log(`Received ${response.data.length} time slots`);
+              console.log('Setting available time slots from API:', response.data);
             } else {
-              console.warn('API response format unexpected, using default time slots');
+              console.log('Using default time slots due to invalid response');
               setAvailableTimeSlots([...defaultTimeSlots]);
-              showInfoNotification('Info', 'Using default available times');
+              notifications.showInfo('Info', 'Using default available times');
             }
+          } catch (apiError) {
+            console.error('API call failed:', apiError);
+            console.log('Using default time slots due to API error');
+            setAvailableTimeSlots([...defaultTimeSlots]);
+            notifications.showInfo('Connection Issue', 'Using default available times');
           }
         } catch (error) {
-          console.error('Failed to fetch time slots:', error);
-          // Only set default slots if we're still interested in this date/stylist combination
-          if (
-            prevDateRef.current?.getTime() === selectedDate.getTime() && 
-            prevStylistIdRef.current === selectedStylistId
-          ) {
-            setAvailableTimeSlots([...defaultTimeSlots]);
-            showInfoNotification('Connection Issue', 'Using default available times');
-          }        } finally {
+          console.error('Failed in time slot processing:', error);
+          setAvailableTimeSlots([...defaultTimeSlots]);
+        } finally {
           setLoading(false);
-          timeSlotsRequestRef.current.fetching = false;
         }
-      };
-      
+      }
+    };
+
+    if (selectedDate && selectedStylistId) {
       fetchTimeSlots();
     }
-    
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, selectedStylistId]); // Intentionally exclude showInfoNotification to prevent infinite loop
+  }, [selectedDate, selectedStylistId, notifications]);
 
   // Set preselected service if available
   useEffect(() => {
@@ -304,9 +248,8 @@ export const BookingModal = ({ isOpen, onClose, onSuccess, preselectedService, o
     const basePrice = service.price.replace('From ', '');
     setPricingPackages(generatePricingPackages(basePrice));
   };
-    const handleStylistSelection = (stylist: Staff) => {
-    // Make sure we set both the name and ID correctly
-    console.log(`Selected stylist: ${stylist.name}, ID: ${stylist.id}`);
+  
+  const handleStylistSelection = (stylist: Staff) => {
     setSelectedStylist(stylist.name);
     setSelectedStylistId(stylist.id);
   };
@@ -410,11 +353,11 @@ export const BookingModal = ({ isOpen, onClose, onSuccess, preselectedService, o
           ? new Date(appointmentData.date) 
           : appointmentData.date as Date
       };
-        const response = await appointmentAPI.createAppointment({
+      
+      const response = await appointmentAPI.createAppointment({
         service: selectedService,
         serviceId: selectedServiceId !== null ? selectedServiceId : 1,
         staff: selectedStylist,
-        staffId: selectedStylistId, // Add the staff ID which is required by the backend
         date: selectedDate as Date,
         time: selectedTime,
         duration: selectedServiceDuration || '60 minutes',
@@ -459,19 +402,20 @@ export const BookingModal = ({ isOpen, onClose, onSuccess, preselectedService, o
     } finally {
       setLoading(false);
     }
-  };  const handleFinish = async () => {
+  };
+
+  const handleFinish = async () => {
     if (loading || !clientInfo.name || !clientInfo.email || !clientInfo.phone) return;
 
     setLoading(true);
     
     try {
-      // Create appointment data object with both staff name and ID
+      // Create appointment data object
       const appointmentData = {
         client: clientInfo.name,
         service: selectedService,
         serviceId: selectedServiceId !== null ? selectedServiceId : 1,
         staff: selectedStylist,
-        staffId: selectedStylistId, // Add the staff ID which is required by the backend
         date: selectedDate as Date,
         time: selectedTime,
         duration: selectedServiceDuration || '60 minutes',
@@ -497,7 +441,14 @@ export const BookingModal = ({ isOpen, onClose, onSuccess, preselectedService, o
       setLoading(false);
     }
   };
-  // This effect was replaced by the one above and can be removed to avoid duplication
+
+  // Initialize default time slots if API fails
+  useEffect(() => {
+    if (step === 4 && (!availableTimeSlots || availableTimeSlots.length === 0)) {
+      console.log('No time slots available, using defaults');
+      setAvailableTimeSlots([...defaultTimeSlots]);
+    }
+  }, [step, availableTimeSlots]);
 
   // Debug component state
   useEffect(() => {

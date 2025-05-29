@@ -34,7 +34,7 @@ export const UniversalServiceCard = ({
   className = ''
 }: ServiceCardProps) => {
   return (
-    <Card className={`group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-0 shadow-lg overflow-hidden ${className}`}>
+    <Card className={`group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-0 shadow-lg overflow-hidden bg-[#FFF5E5] ${className}`}>
       <div className="relative h-48 overflow-hidden">
         <img
           src={image}
@@ -51,9 +51,8 @@ export const UniversalServiceCard = ({
             )}
           </>
         )}
-      </div>
-      
-      <CardContent className="p-6 bg-salon-cream">
+      </div>      
+      <CardContent className="p-6  bg-[#FFF5E5]">
         <h3 className="text-xl font-semibold text-gray-800 mb-2">
           {title}
         </h3>

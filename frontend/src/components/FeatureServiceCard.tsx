@@ -27,7 +27,7 @@ export const FeatureServiceCard: React.FC<FeatureServiceCardProps> = ({
           className="h-full w-full object-cover"
         />
       </div>
-      <div className="flex flex-1 flex-col justify-between bg-salon-cream p-6">
+      <div className="flex flex-1 flex-col justify-between bg-[#FFF5E5] p-6">
         <div className="flex-1">
           <h3 className="text-xl font-semibold text-gray-800 mb-2">{title}</h3>
           <p className="text-gray-600 mb-4 text-sm leading-relaxed">{description}</p>

@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNotificationService } from '@/services/notifications';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface ProfileFormData {
   name: string;
@@ -21,7 +22,12 @@ interface PasswordFormData {
   confirmPassword: string;
 }
 
-export const UserProfile = () => {
+interface UserProfileProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const UserProfile = ({ isOpen, onClose }: UserProfileProps) => {
   const { user, token, login } = useAuth();
   const notifications = useNotificationService();
   
@@ -145,7 +151,7 @@ export const UserProfile = () => {
   }
   
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="w-full  text-gray-800  bg-salon-cream max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle className="text-2xl">Your Profile</CardTitle>
         <CardDescription>
@@ -154,7 +160,7 @@ export const UserProfile = () => {
       </CardHeader>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="text-gray-800  bg-salon-pink grid w-full grid-cols-2">
           <TabsTrigger value="profile">Profile Information</TabsTrigger>
           <TabsTrigger value="password">Change Password</TabsTrigger>
         </TabsList>

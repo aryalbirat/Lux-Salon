@@ -21,7 +21,6 @@ export const ServicesSection = ({ onBookService }: { onBookService?: (serviceNam
           {services.map((service) => (
             <UniversalServiceCard 
               key={service.id}
-              id={service.id}
               title={service.name}
               description={service.description}
               duration={service.duration}
@@ -29,6 +28,7 @@ export const ServicesSection = ({ onBookService }: { onBookService?: (serviceNam
               image={service.image}
               icon={service.icon}
               variant="default"
+              className="bg-[#FFF5E5]" // Explicitly set light cream background color
               onClick={() => onBookService && onBookService(service.name)}
             />
           ))}
@@ -37,7 +37,7 @@ export const ServicesSection = ({ onBookService }: { onBookService?: (serviceNam
           <Button 
             size="lg" 
             variant="outline" 
-            className="border-salon-lavender text-salon-lavender bg-salon-cream hover:bg-salon-lavender hover:text-white font-semibold px-8"
+            className="border-salon-lavender  text-gray-800  bg-salon-pink hover:bg-salon-lavender hover:text-white font-semibold px-8"
           >
             View All Services
           </Button>

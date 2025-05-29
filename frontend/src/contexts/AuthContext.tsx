@@ -49,7 +49,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       if (storedToken && storedUser) {
         setToken(storedToken);
-        setUser(JSON.parse(storedUser));
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (error) {
+          console.error('Failed to parse stored user:', error);
+          localStorage.removeItem('user'); // Remove invalid user data
+        }
       }
 
       setLoading(false);

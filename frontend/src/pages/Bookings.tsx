@@ -39,21 +39,31 @@ const Bookings = () => {
   const [search, setSearch] = useState('');
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-
   const fetchAppointments = async () => {
     try {
       setLoading(true);
-      const response = await appointmentAPI.getAppointments(1, 50); // Get up to 50 appointments
-
-      if (response.success) {
-        setAppointments(response.data);
-        setFilteredAppointments(response.data);
+      
+      // Get both current and historical appointments
+      const [currentResponse, historyResponse] = await Promise.all([
+        appointmentAPI.getAppointments(1, 25),
+        appointmentAPI.getAppointmentHistory(1, 25)
+      ]);
+      
+      if (currentResponse.success && historyResponse.success) {
+        // Combine both types of appointments
+        const currentData = currentResponse.data || currentResponse.appointments || [];
+        const historyData = historyResponse.data || historyResponse.appointments || [];
+        const allAppointments = [...currentData, ...historyData];
+        
+        setAppointments(allAppointments);
+        setFilteredAppointments(allAppointments);
       } else {
-        throw new Error(response.message || 'Failed to fetch appointments');
+        throw new Error('Failed to fetch appointments');
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
-      setError(errorMessage);      notifications.showError(
+      setError(errorMessage);      
+      notifications.showError(
         "Error",
         "Failed to load appointments. Please try again."
       );
@@ -62,10 +72,13 @@ const Bookings = () => {
       setRefreshing(false);
     }
   };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Using empty dependency array since fetchAppointments would cause an infinite loop
+  // and we only want to fetch on component mount
   useEffect(() => {
     fetchAppointments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  
   useEffect(() => {
     // Apply filters and search
     let filtered = [...appointments];
@@ -113,7 +126,9 @@ const Bookings = () => {
       month: 'long',
       day: 'numeric'
     }).format(date);
-  };  const handleCancelAppointment = async (id: string) => {
+  };  
+  
+  const handleCancelAppointment = async (id: string) => {
     try {
       const response = await appointmentAPI.cancelAppointment(id);
 
@@ -159,7 +174,8 @@ const Bookings = () => {
         </div>
 
         <Card className="shadow-md mb-8">
-          <CardContent className="p-6">            <div className="flex flex-col md:flex-row gap-4 items-center">
+          <CardContent className="p-6">            
+            <div className="flex flex-col md:flex-row gap-4 items-center">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
@@ -273,7 +289,8 @@ const Bookings = () => {
           </div>
         )}
       </div>
-        <BookingModal 
+      
+      <BookingModal 
         isOpen={showBookingModal} 
         onClose={() => setShowBookingModal(false)} 
         onSuccess={() => {

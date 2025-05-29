@@ -25,7 +25,7 @@ export const ServiceCard = ({
   icon: Icon
 }: ServiceCardProps) => {
   return (
-    <Card className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-0 shadow-lg overflow-hidden">
+    <Card className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-0 shadow-lg overflow-hidden bg-[#FFF5E5]">
       <div className="relative h-48 overflow-hidden">
         <img
           src={image}
@@ -37,8 +37,7 @@ export const ServiceCard = ({
           <Icon className="h-5 w-5 text-salon-pink" />
         </div>
       </div>
-      
-      <CardContent className="p-6 bg-salon-cream">
+        <CardContent className="p-6 bg-[#FFF5E5]">
         <h3 className="text-xl font-semibold text-gray-800 mb-2">
           {name}
         </h3>

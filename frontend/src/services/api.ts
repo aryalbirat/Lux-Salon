@@ -55,15 +55,21 @@ export const appointmentAPI = {
     const response = await apiClient.get(`/appointments?page=${page}&limit=${limit}`);
     return response.data;
   },
+  getAppointmentHistory: async (page = 1, limit = 10) => {
+    const response = await apiClient.get(`/appointments/history?page=${page}&limit=${limit}`);
+    return response.data;
+  },
   getAppointment: async (id: string) => {
     const response = await apiClient.get(`/appointments/${id}`);
     return response.data;
-  },
-  createAppointment: async (appointmentData: {
+  },  createAppointment: async (appointmentData: {
     client?: string;
     staff: string;
+    staffId?: string;
     service: string;
     serviceId: number;
+    package?: string;
+    packageId?: number;
     date: Date;
     time: string;
     duration: string;

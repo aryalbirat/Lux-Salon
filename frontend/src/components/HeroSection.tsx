@@ -36,7 +36,7 @@ export const HeroSection = ({ onBookAppointment }: { onBookAppointment?: () => v
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="border-salon-lavender text-salon-lavender bg-purple-500 hover:bg-salon-lavender hover:text-white font-semibold px-8 py-4 text-lg"
+                className="border-salon-lavender  text-gray-800  bg-salon-pinkhover:bg-salon-pink/80 font-semibold px-8 py-4 text-lg"
               >
                 View Services
               </Button>
