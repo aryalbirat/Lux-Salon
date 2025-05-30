@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/Navigation';
 import { HeroSection } from '@/components/HeroSection';
 import { ServicesSection } from '@/components/ServicesSection';
@@ -10,15 +10,108 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { MapPin, Phone, Mail, Clock, Instagram, Facebook, Twitter } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { appointmentAPI } from '@/services/api';
+import { useNotificationService } from '@/services/notifications';
 
 const Index = () => {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [preselectedService, setPreselectedService] = useState<string | null>(null);
-  const { login } = useAuth();
+  const { login, authModalRequested, resetAuthModalRequested, authModalOpen, setAuthModalOpen, isAuthenticated } = useAuth();
+  const notifications = useNotificationService();
   
-  const handleAuthSuccess = (user: any, token: string) => {
+  // Watch for auth modal requests from other components
+  useEffect(() => {
+    if (authModalRequested) {
+      console.log('Index detected auth modal request');
+      setShowAuthModal(true);
+      resetAuthModalRequested();
+    }
+  }, [authModalRequested, resetAuthModalRequested]);
+
+  // Watch for auth modal open state directly
+  useEffect(() => {
+    console.log('Auth modal open state changed:', authModalOpen);
+    setShowAuthModal(authModalOpen);
+  }, [authModalOpen]);
+  
+  // Process pending booking after successful login
+  useEffect(() => {
+    const processPendingBooking = async () => {
+      // Check if there's a pending booking in localStorage
+      const pendingBookingStr = localStorage.getItem('pendingBooking');
+      if (!pendingBookingStr) return; // Exit if no pending booking
+      
+      try {
+        console.log('Processing pending booking after login');
+        const pendingBooking = JSON.parse(pendingBookingStr);
+        
+        // Enhanced logging with full object details
+        console.log('Pending booking data:', JSON.stringify(pendingBooking, null, 2));
+        
+        // Prepare booking data for API - only include fields the backend expects
+        const bookingData = {
+          service: pendingBooking.service,
+          date: pendingBooking.date,
+          time: pendingBooking.time,
+          // Optional fields
+          serviceId: pendingBooking.serviceId || null,
+          staff: pendingBooking.staff || null,
+          staffId: pendingBooking.staffId || null,
+          duration: pendingBooking.duration || '1 hour',
+          notes: pendingBooking.notes || ''
+        };
+        
+        // Enhanced logging with full object details
+        console.log('Sending booking data:', JSON.stringify(bookingData, null, 2));
+        
+        const response = await appointmentAPI.createAppointment(bookingData);
+        
+        // Always clear the pending booking to prevent infinite loops
+        localStorage.removeItem('pendingBooking');
+        
+        if (response.success) {
+          notifications.showSuccess("Success", "Your appointment has been booked successfully!");
+          setShowBookingModal(false);
+        } else {
+          // Enhanced error logging
+          console.error('Booking failed with response:', JSON.stringify(response, null, 2));
+          notifications.showError("Booking Failed", response.message || "There was an error booking your appointment.");
+        }
+      } catch (error) {
+        // Clear pending booking on error to prevent infinite loops
+        localStorage.removeItem('pendingBooking');
+        // Enhanced error logging
+        console.error('Error processing pending booking:', error);
+        if (error.response) {
+          console.error('Error response data:', JSON.stringify(error.response.data, null, 2));
+        }
+        notifications.showError("Booking Error", "There was a problem completing your booking.");
+      }
+    };
+
+    // Only process pending booking if user is authenticated
+    if (isAuthenticated) {
+      processPendingBooking();
+    }
+  }, [isAuthenticated, notifications]);
+
+  interface User {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    role: 'client' | 'staff' | 'admin';
+  }
+  
+  const handleAuthSuccess = (user: User, token: string) => {
     login(user, token);
+    setShowAuthModal(false);
+  };
+
+  const handleAuthModalClose = () => {
+    setShowAuthModal(false);
+    setAuthModalOpen(false);
   };
 
   return (
@@ -28,6 +121,8 @@ const Index = () => {
         onOpenBookingModal={() => setShowBookingModal(true)}
       />
       <HeroSection onBookAppointment={() => setShowBookingModal(true)} />
+      
+      {/* Services sections */}
       <ServicesSection onBookService={(serviceName) => {
         setShowBookingModal(true);
         setPreselectedService(serviceName);
@@ -203,8 +298,8 @@ const Index = () => {
       />
       <AuthModal 
         isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
-        onSuccess={handleAuthSuccess}
+        onClose={handleAuthModalClose} 
+        onSuccess={handleAuthSuccess} 
       />
     </div>
   );

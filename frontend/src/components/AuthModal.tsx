@@ -88,24 +88,32 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
       setIsLoading(false);
     }
   };
-    const processPendingBooking = async (token: string, user: User) => {
+  const processPendingBooking = async (token: string, user: User) => {
     // Check for pending booking and process it
     const pendingBooking = localStorage.getItem('pendingBooking');
     if (pendingBooking) {
       try {
+        console.log('Found pending booking, processing after login');
+        
         // Parse the pending booking data
         const bookingData = JSON.parse(pendingBooking);
         
         // Convert the date string back to a Date object
         const apiBookingData = {
           ...bookingData,
-          date: new Date(bookingData.date)
+          date: new Date(bookingData.date),
+          // Ensure we have the correct client info from the logged-in user
+          client: user.name
         };
+        
+        console.log('Processing booking with data:', apiBookingData);
         
         // Use the appointmentAPI to create the booking
         // This will automatically include the auth token from localStorage
         // because of the API client interceptor
         const response = await appointmentAPI.createAppointment(apiBookingData);
+        
+        console.log('Booking response:', response);
         
         if (response.success) {
           // Remove the pending booking from localStorage
@@ -116,6 +124,12 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
             'Booking Completed',
             `Your appointment has been successfully booked for ${new Date(apiBookingData.date).toLocaleDateString()} at ${apiBookingData.time}.`
           );
+          
+          // If the user was redirected to the login modal from the booking process,
+          // redirect them to the dashboard to see their booking
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 500);
         } else {
           throw new Error(response.message || 'Failed to process booking');
         }

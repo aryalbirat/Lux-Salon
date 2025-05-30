@@ -28,11 +28,12 @@ apiClient.interceptors.request.use(
 // Authentication API
 export const authAPI = {
   login: async (email: string, password: string) => {
+    console.log('Attempting to log in with:', { email, password });
     const response = await apiClient.post('/auth/login', { email, password });
     return response.data;
   },
   register: async (userData: { name: string; email: string; password: string; phone?: string }) => {
-    const response = await apiClient.post('/auth/register', userData);
+    const response = await apiClient.post('/auth/signup', userData);
     return response.data;
   },
   getCurrentUser: async () => {
@@ -52,45 +53,83 @@ export const authAPI = {
 // Appointments API
 export const appointmentAPI = {
   getAppointments: async (page = 1, limit = 10) => {
-    const response = await apiClient.get(`/appointments?page=${page}&limit=${limit}`);
+    const response = await apiClient.get(`/bookings/me?page=${page}&limit=${limit}`);
     return response.data;
   },
   getAppointmentHistory: async (page = 1, limit = 10) => {
-    const response = await apiClient.get(`/appointments/history?page=${page}&limit=${limit}`);
+    const response = await apiClient.get(`/bookings/me/history?page=${page}&limit=${limit}`);
     return response.data;
   },
   getAppointment: async (id: string) => {
-    const response = await apiClient.get(`/appointments/${id}`);
+    const response = await apiClient.get(`/bookings/${id}`);
     return response.data;
-  },  createAppointment: async (appointmentData: {
-    client?: string;
-    staff: string;
-    staffId?: string;
+  },
+  createAppointment: async (appointmentData: {
     service: string;
-    serviceId: number;
-    package?: string;
-    packageId?: number;
-    date: Date;
+    date: string | Date;
     time: string;
-    duration: string;
+    serviceId?: number | null;
+    staffId?: string;
+    duration?: string;
     notes?: string;
-  }) => {    try {
-      // Convert Date object to ISO string before sending to API
+  }) => {
+    try {
+      // Parse the time in 12-hour format to 24-hour format
+      const [time, period] = appointmentData.time.split(' ');
+      const [hours, minutes] = time.split(':');
+      let hour = parseInt(hours);
+      if (period === 'PM' && hour !== 12) hour += 12;
+      if (period === 'AM' && hour === 12) hour = 0;
+      
+      // Create a new date object from the selected date
+      const date = new Date(appointmentData.date);
+      
+      // Set the time components
+      date.setHours(hour);
+      date.setMinutes(parseInt(minutes));
+      date.setSeconds(0);
+      date.setMilliseconds(0);
+
+      // Format the data to match backend expectations
       const formattedData = {
-        ...appointmentData,
-        date: appointmentData.date instanceof Date ? appointmentData.date.toISOString() : appointmentData.date
+        service: appointmentData.service,
+        date: date.toISOString(),
+        time: appointmentData.time,
+        // Only include optional fields if they have values
+        ...(appointmentData.serviceId && { serviceId: appointmentData.serviceId }),
+        ...(appointmentData.staffId && { 
+          staffId: appointmentData.staffId,
+          staff: appointmentData.staffId // Include staff field for backward compatibility
+        }),
+        ...(appointmentData.duration && { duration: appointmentData.duration }),
+        ...(appointmentData.notes && { notes: appointmentData.notes })
       };
       
-      const response = await apiClient.post('/appointments', formattedData);
-      return response.data;    } catch (error) {
+      console.log('Sending formatted booking data:', formattedData);
+      
+      const response = await apiClient.post('/bookings', formattedData);
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message
+      };
+    } catch (error) {
       console.error('Error creating appointment:', error);
       
-      // If 401 unauthorized (user not logged in), return a specific message
+      // If 401 unauthorized (user not logged in)
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         return {
           success: false,
           message: 'You need to be logged in to book an appointment',
           needsAuth: true
+        };
+      }
+      
+      // If 400 bad request, return the server's error message
+      if (axios.isAxiosError(error) && error.response?.status === 400) {
+        return {
+          success: false,
+          message: error.response.data.message || 'Invalid booking data provided'
         };
       }
       
@@ -101,27 +140,15 @@ export const appointmentAPI = {
       };
     }
   },
-  updateAppointment: async (
-    id: string,
-    updateData: {
-      client?: string;
-      staff?: string;
-      service?: string;
-      serviceId?: number;
-      date?: Date;
-      time?: string;
-      duration?: string;
-      notes?: string;
-      status?: string;
-    }
-  ) => {
-    const response = await apiClient.put(`/appointments/${id}`, updateData);
+  updateAppointment: async (id: string, updateData: any) => {
+    const response = await apiClient.put(`/bookings/${id}`, updateData);
     return response.data;
   },
   cancelAppointment: async (id: string) => {
-    const response = await apiClient.put(`/appointments/${id}`, { status: 'cancelled' });
+    const response = await apiClient.put(`/bookings/${id}`, { status: 'cancelled' });
     return response.data;
-  },  getAvailableTimeSlots: async (date: string, staffId?: string) => {
+  },
+  getAvailableTimeSlots: async (date: string, staffId?: string) => {
     try {
       // Format date as YYYY-MM-DD for API
       const formattedDate = date.includes('T') ? date.split('T')[0] : date;
@@ -166,7 +193,7 @@ export const appointmentAPI = {
 export const staffAPI = {
   getAllStaff: async () => {
     try {
-      const response = await apiClient.get('/users/staff');
+      const response = await apiClient.get('/auth/staff');
       
       // Handle different response structures from backend
       if (response.data) {

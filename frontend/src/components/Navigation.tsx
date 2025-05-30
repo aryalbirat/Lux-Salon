@@ -5,6 +5,12 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 
+interface NavItem {
+  label: string;
+  href: string;
+  icon?: React.ComponentType<{ className?: string }>;
+}
+
 interface NavigationProps {
   onOpenAuthModal?: () => void;
   onOpenBookingModal?: () => void;
@@ -12,8 +18,9 @@ interface NavigationProps {
 
 export const Navigation = ({ onOpenAuthModal, onOpenBookingModal }: NavigationProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { userRole, logout, isAuthenticated } = useAuth();
-  const navItems = {
+  const { userRole = 'guest', logout, isAuthenticated } = useAuth();
+  
+  const navItems: Record<string, NavItem[]> = {
     guest: [
       { label: 'Services', href: '#services' },
       { label: 'Gallery', href: '#gallery' },
@@ -50,7 +57,7 @@ export const Navigation = ({ onOpenAuthModal, onOpenBookingModal }: NavigationPr
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            {navItems[userRole].map((item) => (
+            {(navItems[userRole as keyof typeof navItems] || navItems.guest).map((item) => (
               item.href.startsWith('#') ? (
                 <a
                   key={item.label}
@@ -132,7 +139,7 @@ export const Navigation = ({ onOpenAuthModal, onOpenBookingModal }: NavigationPr
           isOpen ? "max-h-64 opacity-100" : "max-h-0 opacity-0 overflow-hidden"
         )}>
           <div className="px-2 pt-2 pb-3 space-y-1 bg-white rounded-lg shadow-lg mt-2">
-            {navItems[userRole].map((item) => (
+            {(navItems[userRole as keyof typeof navItems] || navItems.guest).map((item) => (
               item.href.startsWith('#') ? (
                 <a
                   key={item.label}

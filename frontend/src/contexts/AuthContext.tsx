@@ -20,6 +20,8 @@ interface AuthContextType {
   openAuthModal: () => void;
   authModalOpen: boolean;
   setAuthModalOpen: (open: boolean) => void;
+  authModalRequested: boolean;
+  resetAuthModalRequested: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -33,6 +35,8 @@ const AuthContext = createContext<AuthContextType>({
   openAuthModal: () => {},
   authModalOpen: false,
   setAuthModalOpen: () => {},
+  authModalRequested: false,
+  resetAuthModalRequested: () => {},
 });
 
 export const useAuth = () => {
@@ -60,6 +64,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
+  const [authModalRequested, setAuthModalRequested] = useState<boolean>(false);
   const notifications = useNotificationService();
 
   // On mount, check if user is already logged in via localStorage
@@ -118,8 +123,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const openAuthModal = () => {
     console.log('Opening login/signup modal');
     setAuthModalOpen(true);
+    setAuthModalRequested(true);
   };
-
+  
+  const resetAuthModalRequested = () => {
+    setAuthModalRequested(false);
+  };
   return (
     <AuthContext.Provider
       value={{
@@ -132,7 +141,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         userRole,
         openAuthModal,
         authModalOpen,
-        setAuthModalOpen
+        setAuthModalOpen,
+        authModalRequested,
+        resetAuthModalRequested
       }}
     >
       {children}
