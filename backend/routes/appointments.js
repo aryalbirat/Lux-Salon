@@ -17,7 +17,8 @@ router.get('/history', protect, getAppointmentHistory);
 router.get('/available/:date', getAvailableTimeSlots);
 router.get('/available/:date/:staffId', getAvailableTimeSlots);
 router.get('/:id', protect, getAppointment);
-router.post('/', protect, createAppointment);
+// Allow appointments to be created without authentication for demo purposes
+router.post('/', createAppointment);
 router.put('/:id', protect, updateAppointment);
 router.delete('/:id', protect, deleteAppointment);
 

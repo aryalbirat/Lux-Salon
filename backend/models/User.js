@@ -22,6 +22,10 @@ const UserSchema = new mongoose.Schema({
     type: String,
     maxlength: [20, 'Phone number cannot be longer than 20 characters']
   },
+  specialty: {
+    type: String,
+    default: 'Hair Specialist'
+  },
   role: {
     type: String,
     enum: ['client', 'staff', 'admin'],
@@ -68,11 +72,13 @@ UserSchema.methods.matchPassword = async function (enteredPassword) {
 // Create a public profile method to sanitize response
 UserSchema.methods.toPublicProfile = function () {
   return {
+    _id: this._id, // Include both id and _id for compatibility
     id: this._id,
     name: this.name,
     email: this.email,
     phone: this.phone,
-    role: this.role
+    role: this.role,
+    specialty: this.specialty || 'Hair Specialist'
   };
 };
 

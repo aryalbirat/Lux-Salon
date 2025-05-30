@@ -44,6 +44,7 @@ const Dashboard = () => {  const { user } = useAuth();
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [refreshing, setRefreshing] = useState(false);  const [currentAppointments, setCurrentAppointments] = useState<Appointment[]>([]);
   const [pastAppointments, setPastAppointments] = useState<Appointment[]>([]);
+  const [bookings, setBookings] = useState<Appointment[]>([]);
   
   const fetchAppointments = async () => {
     try {
@@ -89,9 +90,26 @@ const Dashboard = () => {  const { user } = useAuth();
     }
   };
 
+  const fetchBookings = async () => {
+    try {
+      console.log('Fetching bookings from database');
+      const response = await appointmentAPI.getAppointments();
+
+      if (response.success) {
+        console.log('Bookings fetched successfully:', response.data);
+        setBookings(response.data);
+      } else {
+        console.error('Failed to fetch bookings:', response.message);
+      }
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+    }
+  };
+
   // Fetch appointments on component mount
   useEffect(() => {
     fetchAppointments();
+    fetchBookings();
   }, []);
     // Handle filtering and searching appointments
   useEffect(() => {
@@ -399,6 +417,52 @@ const Dashboard = () => {  const { user } = useAuth();
             </Tabs>
           </CardContent>
         </Card>
+
+        {/* My Bookings Section */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">My Bookings</h2>
+          <Card className="shadow-md">
+            <CardContent className="p-6">
+              {bookings.length === 0 ? (
+                <div className="text-center py-16 text-gray-500">
+                  <Calendar className="mx-auto h-16 w-16 mb-4 text-gray-400" />
+                  <p className="text-xl font-medium mb-2">No bookings found</p>
+                  <p>Your bookings will appear here.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {bookings.map((booking) => (
+                    <div key={booking._id} className="flex flex-col md:flex-row bg-white rounded-lg shadow-sm overflow-hidden">
+                      <div className="p-4 flex-1">
+                        <div className="flex justify-between">
+                          <h3 className="text-lg font-semibold">{booking.service}</h3>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
+                            {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                          </span>
+                        </div>
+                        <div className="flex items-center text-gray-600 text-sm mt-2">
+                          <Calendar className="h-4 w-4 mr-1" />
+                          <span>{formatDate(booking.date)}</span>
+                          <span className="mx-2">•</span>
+                          <Clock className="h-4 w-4 mr-1" />
+                          <span>{booking.time}</span>
+                        </div>
+                        <div className="text-sm text-gray-600 mt-1">
+                          Stylist: {booking.staff.name}
+                        </div>
+                        {booking.notes && (
+                          <div className="mt-3 text-sm text-gray-500">
+                            <p className="italic">"{booking.notes}"</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
       
       {/* User Profile Modal */}

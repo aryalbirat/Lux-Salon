@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -197,12 +197,14 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-violer-2 sm:max-w-[425px]">
+    <Dialog open={isOpen} onOpenChange={onClose}>      <DialogContent className="bg-violer-2 sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="text-2xl bg-slate-200 font-bold text-center text-gradient">
             Welcome to LuxSalon
           </DialogTitle>
+          <DialogDescription>
+            Sign in to your account or create a new one to manage your bookings
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab} className="w-full">

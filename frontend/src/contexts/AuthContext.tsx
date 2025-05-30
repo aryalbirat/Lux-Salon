@@ -17,6 +17,9 @@ interface AuthContextType {
   logout: () => void;
   isAuthenticated: boolean;
   userRole: 'guest' | 'client' | 'staff' | 'admin';
+  openAuthModal: () => void;
+  authModalOpen: boolean;
+  setAuthModalOpen: (open: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -26,10 +29,27 @@ const AuthContext = createContext<AuthContextType>({
   login: () => {},
   logout: () => {},
   isAuthenticated: false,
-  userRole: 'guest'
+  userRole: 'guest',
+  openAuthModal: () => {},
+  authModalOpen: false,
+  setAuthModalOpen: () => {},
 });
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+
+  return {
+    ...context,
+    openAuthModal: () => {
+      console.log('Opening login/signup modal');
+      context.setAuthModalOpen(true);
+    },
+  };
+};
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -39,6 +59,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const notifications = useNotificationService();
 
   // On mount, check if user is already logged in via localStorage
@@ -67,12 +88,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = (userData: User, authToken: string) => {
     setUser(userData);
     setToken(authToken);
-    
+
     localStorage.setItem('token', authToken);
     localStorage.setItem('user', JSON.stringify(userData));
-    
-    // Show welcome notification
-    notifications.loginSuccess(userData.name);
+
+    console.log('User logged in:', userData);
   };
 
   // Logout function
@@ -95,16 +115,24 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Determine if user is authenticated
   const isAuthenticated = !!user && !!token;
 
+  const openAuthModal = () => {
+    console.log('Opening login/signup modal');
+    setAuthModalOpen(true);
+  };
+
   return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        token, 
-        loading, 
-        login, 
-        logout, 
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        loading,
+        login,
+        logout,
         isAuthenticated,
-        userRole
+        userRole,
+        openAuthModal,
+        authModalOpen,
+        setAuthModalOpen
       }}
     >
       {children}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -83,7 +83,7 @@ const generatePricingPackages = (basePrice: string = '$85'): Package[] => {
   ];
 };
 
-export const BookingModal = ({ isOpen, onClose, onSuccess, preselectedService, onOpenAuthModal }: BookingModalProps) => {  const { user, isAuthenticated } = useAuth();
+export const BookingModal = ({ isOpen, onClose, onSuccess, preselectedService, onOpenAuthModal }: BookingModalProps) => {  const { user, isAuthenticated, openAuthModal, setAuthModalOpen } = useAuth();
   const notifications = useNotificationService();
   // Memoize notification functions to prevent them from causing re-renders
   const showInfoNotification = useCallback((title: string, message: string) => {
@@ -117,8 +117,7 @@ export const BookingModal = ({ isOpen, onClose, onSuccess, preselectedService, o
     email: user?.email || '',
     phone: '',
     notes: ''
-  });
-  // Initialize prevStepRef to track the previous step
+  });  // Initialize prevStepRef to track the previous step
   const prevStepRef = useRef<number>(step);
   
   useEffect(() => {
@@ -126,59 +125,95 @@ export const BookingModal = ({ isOpen, onClose, onSuccess, preselectedService, o
     prevStepRef.current = step;
   }, [step]);
   
-  // Fetch staff members on component mount
+  // Default staff members to use as fallback
+  const defaultStylists = useMemo(() => [
+    { id: '1', name: 'Sarah Thompson', specialty: 'Hair Styling' },
+    { id: '2', name: 'Maria Garcia', specialty: 'Color Specialist' },
+    { id: '3', name: 'Emma Wilson', specialty: 'Skincare Expert' },
+    { id: '4', name: 'Lisa Chen', specialty: 'Nail Technician' },
+  ], []);
+  
+  // Store notification functions and modal state in refs to avoid dependency changes
+  const notificationsRef = useRef(notifications);
+  const isOpenRef = useRef(isOpen);
+  
+  // Update refs when their values change
   useEffect(() => {
+    notificationsRef.current = notifications;
+    isOpenRef.current = isOpen;
+  }, [notifications, isOpen]);
+  
+  // Track if we've already fetched staff for this modal session
+  const staffFetchedRef = useRef(false);
+  
+  // Fetch staff members when modal opens
+  useEffect(() => {
+    // Only fetch staff when the modal first opens
+    if (!isOpen || staffFetchedRef.current) {
+      return;
+    }
+    
     const fetchStaff = async () => {
       try {
         setLoading(true);
-        const response = await staffAPI.getAllStaff();
-        console.log('Staff API Response:', response);
+        staffFetchedRef.current = true;
         
-        if (response?.success && response.data) {
+        const response = await staffAPI.getAllStaff();
+        
+        // Only process if modal is still open
+        if (!isOpenRef.current) return;
+        
+        if (response?.success && Array.isArray(response.data) && response.data.length > 0) {
           const formattedStaff = response.data.map((staff: { _id: string; name: string; specialty?: string }) => ({
             id: staff._id,
             name: staff.name,
             specialty: staff.specialty || 'Hair Specialist'
           }));
-          console.log('Formatted staff data:', formattedStaff);
+          
           setStylists(formattedStaff);
         } else {
-          // Fallback to default stylists if API call fails
-          setStylists([
-            { id: '1', name: 'Sarah Thompson', specialty: 'Hair Styling' },
-            { id: '2', name: 'Maria Garcia', specialty: 'Color Specialist' },
-            { id: '3', name: 'Emma Wilson', specialty: 'Skincare Expert' },
-            { id: '4', name: 'Lisa Chen', specialty: 'Nail Technician' },
-          ]);
+          // Fallback to default stylists if API call returns empty data
+          setStylists(defaultStylists);
+          
+          // Show notification only once and only if modal is still open
+          if (isOpenRef.current) {
+            notificationsRef.current.showInfo(
+              'Using Default Stylists',
+              'Using default stylists for demonstration purposes.'
+            );
+          }
         }
       } catch (error) {
         console.error('Failed to fetch staff:', error);
+        
         // Fallback to default stylists if API call fails
-        setStylists([
-          { id: '1', name: 'Sarah Thompson', specialty: 'Hair Styling' },
-          { id: '2', name: 'Maria Garcia', specialty: 'Color Specialist' },
-          { id: '3', name: 'Emma Wilson', specialty: 'Skincare Expert' },
-          { id: '4', name: 'Lisa Chen', specialty: 'Nail Technician' },
-        ]);
+        if (isOpenRef.current) {
+          setStylists(defaultStylists);
+        }
       } finally {
-        setLoading(false);
+        if (isOpenRef.current) {
+          setLoading(false);
+        }
       }
     };
     
-    if (isOpen) {
-      fetchStaff();
-      
-      // Pre-fill client info if user is logged in
-      if (user) {
-        setClientInfo(prev => ({
-          ...prev,
-          name: user.name,
-          email: user.email,
-          phone: user.phone || ''
-        }));
-      }
+    fetchStaff();
+    
+    // Pre-fill client info if user is logged in
+    if (user) {
+      setClientInfo(prev => ({
+        ...prev,
+        name: user.name,
+        email: user.email,
+        phone: user.phone || ''
+      }));
     }
-  }, [isOpen, user]);  // Ensure time slots are properly initialized when moving to date/time step 
+    
+    // Reset staffFetched when modal closes
+    return () => {
+      staffFetchedRef.current = false;
+    };
+  }, [isOpen, user, defaultStylists]); // Only depend on modal opening, user, and defaultStylists// Ensure time slots are properly initialized when moving to date/time step 
   
   useEffect(() => {
     // Only run when first entering step 4
@@ -351,167 +386,165 @@ export const BookingModal = ({ isOpen, onClose, onSuccess, preselectedService, o
   
   // This stores the appointment data temporarily when the user is not authenticated
   const [pendingAppointmentData, setPendingAppointmentData] = useState<AppointmentData | null>(null);
-
   const handleSubmit = async () => {
-    // Store the appointment data in case we need it after authentication
-    const appointmentData = {
-      service: selectedService,
-      serviceId: selectedServiceId as number,
-      package: selectedPackage,
-      packageId: selectedPackageId as number,
-      staff: selectedStylistId,
-      date: selectedDate ? selectedDate.toISOString() : '',
-      time: selectedTime,
-      duration: selectedServiceDuration,
-      notes: clientInfo.notes,
-      clientInfo: {
-        name: clientInfo.name,
-        email: clientInfo.email,
-        phone: clientInfo.phone
-      }
-    };
+    console.log('Submitting booking...');
     
-    // Store the booking data for later use
-    setPendingAppointmentData(appointmentData);
-    localStorage.setItem('pendingBooking', JSON.stringify(appointmentData));
-    
-    // If the user is not authenticated, close the booking modal and open authentication dialog
+    // Check if user is authenticated, if not, open auth modal
     if (!isAuthenticated) {
-      onClose();
-      
-      if (notifications.showAuthRequired) {
-        notifications.showAuthRequired(
-          'Please sign in to complete your booking',
-          'Your booking details have been saved and will be completed after you sign in.'
-        );
-      } else {
-        notifications.showInfo(
-          'Authentication Required',
-          'Please sign in to complete your booking'
-        );
-      }
-      
-      // Open the authentication modal if the callback is provided
-      if (onOpenAuthModal) {
-        onOpenAuthModal();
-      }
-      
+      console.log('User not authenticated, redirecting to handleFinish to open login modal');
+      handleFinish();
       return;
     }
     
-    // User is authenticated, proceed with booking
+    const bookingData = {
+      service: selectedService,
+      serviceId: selectedServiceId,
+      package: selectedPackage,
+      packageId: selectedPackageId,
+      staff: selectedStylist,
+      staffId: selectedStylistId,
+      date: selectedDate ? new Date(selectedDate) : new Date(), // Ensure it's a Date object
+      time: selectedTime,
+      duration: selectedServiceDuration,
+      client: clientInfo.name,
+      notes: clientInfo.notes,
+    };
+
     try {
-      setLoading(true);
-      
-      // Make sure we have a proper Date object for the API call
-      const apiAppointmentData = {
-        ...appointmentData,
-        date: typeof appointmentData.date === 'string' 
-          ? new Date(appointmentData.date) 
-          : appointmentData.date as Date
-      };
-        const response = await appointmentAPI.createAppointment({
-        service: selectedService,
-        serviceId: selectedServiceId !== null ? selectedServiceId : 1,
-        staff: selectedStylist,
-        staffId: selectedStylistId, // Add the staff ID which is required by the backend
-        date: selectedDate as Date,
-        time: selectedTime,
-        duration: selectedServiceDuration || '60 minutes',
-        notes: clientInfo.notes || '',
-      });
-      
+      console.log('Booking data:', bookingData);
+      const response = await appointmentAPI.createAppointment(bookingData);
+      console.log('Booking response:', response);
       if (response.success) {
-        notifications.showSuccess('Success', 'Appointment booked successfully!');
-        
-        // Reset form
-        setStep(1);
-        setSelectedService('');
-        setSelectedServiceId(null);
-        setSelectedPackage('');
-        setSelectedPackageId(null);
-        setSelectedStylist('');
-        setSelectedStylistId('');
-        setSelectedDate(undefined);
-        setSelectedTime('');
-        setClientInfo({
-          name: user?.name || '',
-          email: user?.email || '',
-          phone: '',
-          notes: ''
-        });
-        
-        // Call onSuccess if provided
         if (onSuccess) {
           onSuccess();
         }
-        
+        notifications.showSuccess("Success", "Your appointment has been booked successfully!");
         onClose();
+      } else if (response.needsAuth) {
+        console.log('Authentication required for booking');
+        // Open auth modal
+        openAuthModal();
       } else {
-        throw new Error(response.message || 'Failed to book appointment');
+        console.error('Failed to book appointment:', response.message);
+        notifications.showError("Booking Failed", response.message || "There was an error booking your appointment.");
       }
     } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'There was an error booking your appointment. Please try again.';
-      
-      notifications.showError('Booking Failed', errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };  const handleFinish = async () => {
-    if (loading || !clientInfo.name || !clientInfo.email || !clientInfo.phone) return;
-
-    setLoading(true);
-    
-    try {
-      // Create appointment data object with both staff name and ID
-      const appointmentData = {
-        client: clientInfo.name,
-        service: selectedService,
-        serviceId: selectedServiceId !== null ? selectedServiceId : 1,
-        staff: selectedStylist,
-        staffId: selectedStylistId, // Add the staff ID which is required by the backend
-        date: selectedDate as Date,
-        time: selectedTime,
-        duration: selectedServiceDuration || '60 minutes',
-        notes: clientInfo.notes || '',
-      };
-      
-      console.log('Booking appointment with data:', appointmentData);
-      
-      // Use the createAppointment API
-      const response = await appointmentAPI.createAppointment(appointmentData);
-
-      if (response.success) {
-        notifications.showSuccess('Success', 'Your appointment has been successfully booked.');
-        onSuccess?.();
-        onClose();
-      } else {
-        notifications.showError('Failed', 'Could not book appointment. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error booking appointment:', error);
-      notifications.showError('Error', 'An error occurred while booking. Please try again.');
-    } finally {
-      setLoading(false);
+      console.error('Error during booking:', error);
     }
   };
-  // This effect was replaced by the one above and can be removed to avoid duplication
+
+  // Step 4: Handle API failure gracefully
+  useEffect(() => {
+    if (step === 4 && prevStepRef.current !== 4) {
+      const fetchTimeSlots = async () => {
+        try {          // Handle case where selectedDate might be undefined
+          let formattedDate;
+          if (selectedDate) {
+            formattedDate = format(selectedDate, 'yyyy-MM-dd');
+          } else {
+            formattedDate = format(new Date(), 'yyyy-MM-dd');
+          }
+          
+          console.log(`Fetching time slots for date: ${formattedDate}, stylist: ${selectedStylistId || 'all'}`);
+          const response = await appointmentAPI.getAvailableTimeSlots(formattedDate, selectedStylistId);
+          if (response.success && Array.isArray(response.data)) {
+            setAvailableTimeSlots(response.data);
+          } else {
+            console.warn('API response format unexpected, using default time slots');
+            setAvailableTimeSlots([...defaultTimeSlots]);
+          }
+        } catch (error) {
+          console.error('Error fetching available time slots:', error);
+          setAvailableTimeSlots([...defaultTimeSlots]);
+        }
+      };
+      fetchTimeSlots();
+    }
+  }, [step, selectedDate, selectedStylistId]);
+  // Step 5: Trigger login/signup modal if not authenticated
+  const handleFinish = async () => {
+    console.log('Finish button pressed');
+
+    if (!isAuthenticated) {
+      console.log('User not authenticated, opening login/signup modal');
+      // Store appointment data for later
+      const pendingData = {
+        service: selectedService,
+        serviceId: selectedServiceId,
+        package: selectedPackage,
+        packageId: selectedPackageId,
+        staff: selectedStylist,
+        staffId: selectedStylistId,
+        date: selectedDate || new Date(),
+        time: selectedTime,
+        duration: selectedServiceDuration,
+        notes: clientInfo.notes,
+        clientInfo: {
+          name: clientInfo.name,
+          email: clientInfo.email,
+          phone: clientInfo.phone
+        }
+      };
+      
+      setPendingAppointmentData(pendingData);
+      console.log('Storing pending appointment data:', pendingData);
+      
+      // Open the auth modal and wait for login
+      console.log('Opening authentication modal');
+      openAuthModal();
+      return; // Stop here and wait for auth
+    }
+
+    // Create booking data for API
+    const bookingData = {
+      service: selectedService,
+      serviceId: selectedServiceId,
+      package: selectedPackage,
+      packageId: selectedPackageId,
+      staff: selectedStylistId,  // Use ID directly since our backend expects an ID
+      staffId: selectedStylistId,
+      date: selectedDate ? new Date(selectedDate) : new Date(),  // Ensure it's a Date object
+      time: selectedTime,
+      duration: selectedServiceDuration,
+      client: clientInfo.name,
+      notes: clientInfo.notes,
+    };
+
+    try {
+      console.log('Booking data:', bookingData);
+      const response = await appointmentAPI.createAppointment(bookingData);
+      console.log('Booking response:', response);
+      if (response.success) {
+        if (onSuccess) {
+          onSuccess();
+        }
+        notifications.showSuccess("Success", "Your appointment has been booked successfully!");
+        onClose();
+      } else if (response.needsAuth) {
+        console.log('Authentication required for booking');
+        // Open auth modal
+        openAuthModal();
+      } else {
+        console.error('Failed to book appointment:', response.message);
+        notifications.showError("Booking Failed", response.message || "There was an error booking your appointment.");
+      }
+    } catch (error) {
+      console.error('Error during booking:', error);
+    }
+  };
 
   // Debug component state
   useEffect(() => {
     console.log(`Current step: ${step}`);
   }, [step]);
-  
   return (
     <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
-      <DialogContent aria-describedby="booking-modal-description" className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center text-gradient">
             Book Your Appointment
           </DialogTitle>
-          <DialogDescription id="booking-modal-description" className="sr-only">
+          <DialogDescription>
             Book a salon appointment by following the steps
           </DialogDescription>
         </DialogHeader>
@@ -806,12 +839,10 @@ export const BookingModal = ({ isOpen, onClose, onSuccess, preselectedService, o
                 </div>
               </div>
             </div>
-            
-            <div className="flex gap-4 justify-between">
+              <div className="flex gap-4 justify-between">
               <Button variant="outline" onClick={prevStep}>
                 Back
-              </Button>
-              <Button 
+              </Button>              <Button 
                 onClick={handleFinish}
                 disabled={loading || !clientInfo.name || !clientInfo.email || !clientInfo.phone}
                 className="bg-salon-gold hover:bg-salon-gold/90 text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -825,3 +856,5 @@ export const BookingModal = ({ isOpen, onClose, onSuccess, preselectedService, o
     </Dialog>
   );
 };
+
+export default BookingModal;

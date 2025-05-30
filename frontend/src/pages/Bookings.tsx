@@ -158,6 +158,25 @@ const Bookings = () => {
     fetchAppointments();
   };
 
+  useEffect(() => {
+    const fetchBookings = async () => {
+      console.log('Fetching bookings...');
+      try {
+        const response = await appointmentAPI.getAppointments();
+        console.log('Bookings response:', response);
+        if (response.success) {
+          setAppointments(response.data);
+        } else {
+          console.error('Failed to fetch bookings:', response.message);
+        }
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+      }
+    };
+
+    fetchBookings();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />

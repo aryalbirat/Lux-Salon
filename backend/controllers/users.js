@@ -7,13 +7,35 @@ exports.getStaff = async (req, res, next) => {
   try {
     const staff = await User.find({ role: 'staff' }).select('-password');
     
+    // Check if toPublicProfile method exists
+    const staffData = staff.map(staffMember => {
+      if (typeof staffMember.toPublicProfile === 'function') {
+        return staffMember.toPublicProfile();
+      } else {
+        // Fallback if the method doesn't exist
+        return {
+          id: staffMember._id,
+          name: staffMember.name,
+          email: staffMember.email,
+          phone: staffMember.phone,
+          role: staffMember.role,
+          specialty: staffMember.specialty || 'Hair Specialist'
+        };
+      }
+    });
+    
     res.status(200).json({
       success: true,
       count: staff.length,
-      staff: staff.map(staffMember => staffMember.toPublicProfile())
+      staff: staffData
     });
   } catch (error) {
-    next(error);
+    console.error('Error fetching staff:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching staff',
+      error: error.message
+    });
   }
 };
 
