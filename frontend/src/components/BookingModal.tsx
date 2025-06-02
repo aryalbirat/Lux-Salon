@@ -95,6 +95,19 @@ interface BookingData {
   notes?: string;
 }
 
+interface AppointmentData {
+  service: string;
+  serviceId?: number | null;
+  package: string;
+  packageId?: number | null;
+  staff?: string;
+  staffId?: string;
+  date: Date;
+  time: string;
+  duration?: string;
+  notes?: string;
+}
+
 export const BookingModal = ({ isOpen, onClose, onSuccess, preselectedService, onOpenAuthModal }: BookingModalProps) => {  const { user, isAuthenticated, openAuthModal, setAuthModalOpen } = useAuth();
   const notifications = useNotificationService();
   // Memoize notification functions to prevent them from causing re-renders
@@ -378,124 +391,8 @@ export const BookingModal = ({ isOpen, onClose, onSuccess, preselectedService, o
     }
   };
 
-  // Interface for appointment data
-  interface AppointmentData {
-    service: string;
-    serviceId: number;
-    package: string;
-    packageId: number;
-    staff: string;
-    date: string | Date;
-    time: string;
-    duration: string;
-    notes: string;
-    clientInfo: {
-      name: string;
-      email: string;
-      phone: string;
-    };
-  }
-  
   // This stores the appointment data temporarily when the user is not authenticated
   const [pendingAppointmentData, setPendingAppointmentData] = useState<AppointmentData | null>(null);
-  const handleSubmit = async () => {
-    console.log('Submitting booking...');
-    let retryCount = 0;
-    const maxRetries = 3;
-
-    // Check if user is authenticated, if not, open auth modal
-    if (!isAuthenticated) {
-      console.log('User not authenticated, redirecting to handleFinish to open login modal');
-      handleFinish();
-      return;
-    }
-
-    const bookingData = {
-      service: selectedService,
-      date: selectedDate,
-      time: selectedTime,
-      // Optional fields
-      serviceId: selectedServiceId || undefined,
-      staff: selectedStylist || undefined,
-      staffId: selectedStylistId || undefined,
-      duration: selectedServiceDuration || '1 hour',
-      notes: clientInfo.notes || undefined
-    } as const;
-
-    // Remove any undefined fields while preserving types
-    const cleanedBookingData = {
-      service: bookingData.service,
-      date: bookingData.date,
-      time: bookingData.time,
-      ...(bookingData.serviceId && { serviceId: bookingData.serviceId }),
-      ...(bookingData.staff && { staff: bookingData.staff }),
-      ...(bookingData.staffId && { staffId: bookingData.staffId }),
-      ...(bookingData.duration && { duration: bookingData.duration }),
-      ...(bookingData.notes && { notes: bookingData.notes })
-    };
-
-    console.log('Booking data:', cleanedBookingData);
-    
-    while (retryCount < maxRetries) {
-      try {
-        const response = await appointmentAPI.createAppointment(cleanedBookingData);
-        console.log('Booking response:', response);
-        if (response.success) {
-          if (onSuccess) {
-            onSuccess();
-          }
-          notifications.showSuccess("Success", "Your appointment has been booked successfully!");
-          onClose();
-          break;
-        } else if (response.needsAuth) {
-          console.log('Authentication required for booking');
-          // Open auth modal
-          openAuthModal();
-          break;
-        } else {
-          console.error('Failed to book appointment:', response.message);
-          notifications.showError("Booking Failed", response.message || "There was an error booking your appointment.");
-          break;
-        }
-      } catch (error) {
-        console.error('Error during booking:', error);
-        retryCount++;
-        if (retryCount >= maxRetries) {
-          notifications.showError('Booking Failed', 'Maximum retry attempts reached. Please try again later.');
-        }
-      }
-    }
-  };
-
-  // Step 4: Handle API failure gracefully
-  useEffect(() => {
-    if (step === 4 && prevStepRef.current !== 4) {
-      const fetchTimeSlots = async () => {
-        try {          // Handle case where selectedDate might be undefined
-          let formattedDate;
-          if (selectedDate) {
-            formattedDate = format(selectedDate, 'yyyy-MM-dd');
-          } else {
-            formattedDate = format(new Date(), 'yyyy-MM-dd');
-          }
-          
-          console.log(`Fetching time slots for date: ${formattedDate}, stylist: ${selectedStylistId || 'all'}`);
-          const response = await appointmentAPI.getAvailableTimeSlots(formattedDate, selectedStylistId);
-          if (response.success && Array.isArray(response.data)) {
-            setAvailableTimeSlots(response.data);
-          } else {
-            console.warn('API response format unexpected, using default time slots');
-            setAvailableTimeSlots([...defaultTimeSlots]);
-          }
-        } catch (error) {
-          console.error('Error fetching available time slots:', error);
-          setAvailableTimeSlots([...defaultTimeSlots]);
-        }
-      };
-      fetchTimeSlots();
-    }
-  }, [step, selectedDate, selectedStylistId]);
-  // Step 5: Trigger login/signup modal if not authenticated
   const handleFinish = async () => {
     console.log('Finish button pressed');
     
@@ -506,55 +403,62 @@ export const BookingModal = ({ isOpen, onClose, onSuccess, preselectedService, o
 
     // If user is not authenticated, store booking data and open auth modal
     if (!isAuthenticated) {
-      const pendingBooking = {
+      const pendingBookingData: AppointmentData = {
         service: selectedService,
         serviceId: selectedServiceId,
+        package: selectedPackage,
+        packageId: selectedPackageId,
         staff: selectedStylist,
         staffId: selectedStylistId,
-        date: selectedDate,
+        date: selectedDate as Date,
         time: selectedTime,
         duration: selectedServiceDuration || '1 hour',
         notes: clientInfo.notes || ''
       };
       
-      localStorage.setItem('pendingBooking', JSON.stringify(pendingBooking));
+      localStorage.setItem('pendingBooking', JSON.stringify(pendingBookingData));
       if (onOpenAuthModal) {
         onOpenAuthModal();
       }
       return;
     }
 
-    try {
-      // Format the booking data to match backend expectations
-      const bookingData = {
-        service: selectedService,
-        date: selectedDate,
-        time: selectedTime,
-        serviceId: selectedServiceId,
-        // Only send staffId, not staff name
-        staffId: selectedStylistId,
-        duration: selectedServiceDuration || '1 hour',
-        notes: clientInfo.notes || ''
-      };
+    if (loading || !clientInfo.name || !clientInfo.email || !clientInfo.phone) return;
 
-      console.log('Booking data:', bookingData);
+    setLoading(true);
+    
+    try {
+      // Create appointment data object
+      const bookingData: AppointmentData = {
+        service: selectedService,
+        serviceId: selectedServiceId !== null ? selectedServiceId : 1,
+        package: selectedPackage, // Add package name
+        packageId: selectedPackageId !== null ? selectedPackageId : 1, // Add package ID
+        staff: selectedStylist,
+        staffId: selectedStylistId,
+        date: selectedDate as Date,
+        time: selectedTime,
+        duration: selectedServiceDuration || '60 minutes',
+        notes: clientInfo.notes || '',
+      };
       
+      console.log('Booking appointment with data:', bookingData);
+      
+      // Use the createAppointment API
       const response = await appointmentAPI.createAppointment(bookingData);
-      console.log('Booking response:', response);
 
       if (response.success) {
-        notifications.showSuccess('Success', 'Your appointment has been booked successfully!');
+        notifications.showSuccess('Success', 'Your appointment has been successfully booked.');
+        onSuccess?.();
         onClose();
-        if (onSuccess) {
-          onSuccess();
-        }
       } else {
-        console.log('Failed to book appointment:', response.message);
-        notifications.showError('Booking Failed', response.message);
+        notifications.showError('Failed', response.message || 'Could not book appointment. Please try again.');
       }
     } catch (error) {
-      console.error('Error during booking:', error);
-      notifications.showError('Error', 'An error occurred while booking your appointment');
+      console.error('Error booking appointment:', error);
+      notifications.showError('Error', 'An error occurred while booking. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -20,6 +20,8 @@ const userSchema = new mongoose.Schema({
     enum: ['client', 'staff', 'admin'],
     default: 'client'
   }
+}, {
+  timestamps: true // This will add createdAt and updatedAt fields
 });
 
 userSchema.pre('save', async function(next) {

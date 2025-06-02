@@ -14,10 +14,18 @@ const bookingSchema = new mongoose.Schema({
     type: Number
   },
   staff: {
-    type: String
+    type: String,
+    required: true
   },
   staffId: {
     type: String
+  },
+  package: {
+    type: String,
+    required: true
+  },
+  packageId: {
+    type: Number
   },
   date: {
     type: Date,
@@ -43,6 +51,8 @@ const bookingSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+}, {
+  timestamps: true
 });
 
 // Add index for faster queries

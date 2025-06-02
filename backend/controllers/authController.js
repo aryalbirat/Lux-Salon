@@ -4,11 +4,38 @@ const jwt = require('jsonwebtoken');
 exports.signup = async (req, res) => {
   const { name, email, password } = req.body;
   try {
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email already registered'
+      });
+    }
+
     const user = new User({ name, email, password });
     await user.save();
-    res.status(201).json({ message: 'User registered successfully' });
+
+    // Create token for immediate login
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.status(201).json({
+      success: true,
+      message: 'User registered successfully',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
   } catch (err) {
-    res.status(400).json({ error: 'Error registering user' });
+    console.error('Registration error:', err);
+    res.status(400).json({
+      success: false,
+      message: err.message || 'Error registering user'
+    });
   }
 };
 

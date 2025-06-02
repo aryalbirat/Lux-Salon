@@ -70,6 +70,8 @@ export const appointmentAPI = {
     time: string;
     serviceId?: number | null;
     staffId?: string;
+    package?: string;
+    packageId?: number;
     duration?: string;
     notes?: string;
   }) => {
@@ -93,10 +95,12 @@ export const appointmentAPI = {
       // Format the data to match backend expectations
       const formattedData = {
         service: appointmentData.service,
+        package: appointmentData.package,
         date: date.toISOString(),
         time: appointmentData.time,
         // Only include optional fields if they have values
         ...(appointmentData.serviceId && { serviceId: appointmentData.serviceId }),
+        ...(appointmentData.packageId && { packageId: appointmentData.packageId }),
         ...(appointmentData.staffId && { 
           staffId: appointmentData.staffId,
           staff: appointmentData.staffId // Include staff field for backward compatibility
