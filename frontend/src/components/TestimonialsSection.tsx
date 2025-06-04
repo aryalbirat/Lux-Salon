@@ -1,17 +1,9 @@
-
 import { Card, CardContent } from '@/components/ui/card';
 import { Star, Quote } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const testimonials = [
-  {
-    id: 1,
-    name: 'Sarah Johnson',
-    service: 'Hair Styling',
-    rating: 5,
-    content: 'Absolutely amazing experience! The staff was professional and the results exceeded my expectations. My hair has never looked better!',
-    image: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80'
-  },
+
   {
     id: 2,
     name: 'Emily Chen',
@@ -49,7 +41,7 @@ export const TestimonialsSection = () => {
   }, []);
 
   return (
-    <section className="py-20 bg-gradient-to-br from-salon-pink-light to-salon-cream">
+    <section id="testimonials" className="py-20 bg-gradient-to-br from-salon-pink-light to-salon-cream">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-16">

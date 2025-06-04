@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { UniversalServiceCard } from './UniversalServiceCard';
 import { getAllServices } from '@/data/serviceData';
+import { scrollToSection } from '@/lib/utils';
 
 export const ServicesSection = ({ onBookService }: { onBookService?: (serviceName: string) => void }) => {
   const services = getAllServices();
@@ -37,7 +38,8 @@ export const ServicesSection = ({ onBookService }: { onBookService?: (serviceNam
           <Button 
             size="lg" 
             variant="outline" 
-            className="border-salon-lavender  text-gray-800  bg-salon-pink hover:bg-salon-lavender hover:text-white font-semibold px-8"
+            className="border-salon-lavender text-gray-800 bg-salon-pink hover:bg-salon-lavender hover:text-white font-semibold px-8"
+            onClick={() => scrollToSection('services')}
           >
             View All Services
           </Button>

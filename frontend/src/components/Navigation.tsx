@@ -1,14 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Calendar, User as UserIcon, Settings, LogOut } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 interface NavItem {
   label: string;
   href: string;
-  icon?: React.ComponentType<{ className?: string }>;
 }
 
 interface NavigationProps {
@@ -20,31 +19,55 @@ export const Navigation = ({ onOpenAuthModal, onOpenBookingModal }: NavigationPr
   const [isOpen, setIsOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const isAdmin = user?.role === 'admin';
   
   const navItems: Record<string, NavItem[]> = {
     guest: [
       { label: 'Services', href: '#services' },
       { label: 'Gallery', href: '#gallery' },
+      { label: 'Testimonials', href: '#testimonials' },
       { label: 'Contact', href: '#contact' }
-    ],
-    client: [
-      { label: 'My Bookings', href: '/bookings', icon: Calendar },
-      { label: 'Profile', href: '/profile', icon: UserIcon }
     ],
     admin: [
       { label: 'Dashboard', href: '/admin' },
       { label: 'Bookings', href: '/admin/bookings' },
-      { label: 'Clients', href: '/admin/clients' },
-      { label: 'Staff', href: '/admin/staff' },
-      { label: 'Services', href: '/admin/services' }
-    ],
-    staff: [
-      { label: 'My Schedule', href: '/staff/schedule', icon: Calendar },
-      { label: 'Clients', href: '/staff/clients' },
-      { label: 'Profile', href: '/profile', icon: UserIcon }
+      { label: 'Clients', href: '/admin/clients' }
     ]
   };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  const handleServicesClick = () => {
+    if (location.pathname !== '/') {
+      navigate('/');
+      // Add a small delay to ensure navigation completes before scrolling
+      setTimeout(() => {
+        const servicesSection = document.getElementById('services');
+        if (servicesSection) {
+          servicesSection.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    } else {
+      const servicesSection = document.getElementById('services');
+      if (servicesSection) {
+        servicesSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
+  // Effect to handle hash navigation after page load
+  useEffect(() => {
+    if (location.hash === '#services') {
+      const servicesSection = document.getElementById('services');
+      if (servicesSection) {
+        servicesSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }, [location.hash]);
 
   return (
     <nav className="bg-white/90 backdrop-blur-md shadow-lg sticky top-0 z-50">
@@ -60,52 +83,45 @@ export const Navigation = ({ onOpenAuthModal, onOpenBookingModal }: NavigationPr
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {isAdmin ? (
-              <>
+              navItems.admin.map((item) => (
                 <Link
-                  to="/admin"
+                  key={item.href}
+                  to={item.href}
                   className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-salon-pink"
                 >
-                  Admin
+                  {item.label}
                 </Link>
-                <Link
-                  to="/admin/bookings"
-                  className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-salon-pink"
-                >
-                  Bookings
-                </Link>
-                <Link
-                  to="/admin/clients"
-                  className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-salon-pink"
-                >
-                  Clients
-                </Link>
-              </>
+              ))
             ) : (
-              <>
-                <Link
-                  to="/bookings"
+              navItems.guest.map((item) => (
+                <button
+                  key={item.href}
+                  onClick={() => {
+                    if (item.href.startsWith('#')) {
+                      const sectionId = item.href.substring(1);
+                      const section = document.getElementById(sectionId);
+                      if (section) {
+                        section.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }
+                  }}
                   className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-salon-pink"
                 >
-                  My Bookings
-                </Link>
-                <Link
-                  to="/profile"
-                  className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-salon-pink"
-                >
-                  Profile
-                </Link>
-              </>
+                  {item.label}
+                </button>
+              ))
             )}
           </div>
 
           {/* User Actions */}
-          <div className="hidden md:flex items-center space-x-4">            {!isAuthenticated ? (
+          <div className="hidden md:flex items-center space-x-4">
+            {!isAuthenticated ? (
               <>
                 <Button variant="ghost" onClick={onOpenAuthModal}>
                   Sign In
                 </Button>
                 <Button 
-                  className="bg-salon-pink hover:bg-salon-pink/90 text-gray-800"
+                  className="bg-salon-pink hover:bg-salon-pink/90 text-slate-900"
                   onClick={onOpenBookingModal}
                 >
                   Book Now
@@ -113,14 +129,13 @@ export const Navigation = ({ onOpenAuthModal, onOpenBookingModal }: NavigationPr
               </>
             ) : (
               <div className="flex items-center space-x-2">
-                {/* Dashboard button for all authenticated users */}
-                <Link to="/dashboard">
-                  <Button variant="ghost" size="sm">
-                    Dashboard
-                  </Button>
-                </Link>
-                
-                {/* Book appointment button */}
+                {isAdmin && (
+                  <Link to="/admin">
+                    <Button variant="ghost" size="sm">
+                      Dashboard
+                    </Button>
+                  </Link>
+                )}
                 <Button 
                   variant="ghost" 
                   size="sm"
@@ -128,13 +143,11 @@ export const Navigation = ({ onOpenAuthModal, onOpenBookingModal }: NavigationPr
                 >
                   Book
                 </Button>
-                
-                {/* Logout button */}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="p-2 text-red-600 hover:text-red-800" 
-                  onClick={logout}
+                  className="text-red-600 hover:text-red-800" 
+                  onClick={handleLogout}
                 >
                   <LogOut className="h-4 w-4" />
                 </Button>
@@ -153,60 +166,51 @@ export const Navigation = ({ onOpenAuthModal, onOpenBookingModal }: NavigationPr
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
           </div>
-        </div>        {/* Mobile Navigation */}
+        </div>
+
+        {/* Mobile Navigation */}
         <div className={cn(
           "md:hidden transition-all duration-300 ease-in-out",
-          isOpen ? "max-h-64 opacity-100" : "max-h-0 opacity-0 overflow-hidden"
+          isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0 overflow-hidden"
         )}>
           <div className="px-2 pt-2 pb-3 space-y-1 bg-white rounded-lg shadow-lg mt-2">
             {isAdmin ? (
-              <>
+              navItems.admin.map((item) => (
                 <Link
-                  to="/admin"
+                  key={item.href}
+                  to={item.href}
                   className="block px-3 py-2 text-gray-700 hover:text-salon-pink hover:bg-salon-pink-light/20 rounded-md transition-colors duration-200"
                   onClick={() => setIsOpen(false)}
                 >
-                  Admin
+                  {item.label}
                 </Link>
-                <Link
-                  to="/admin/bookings"
-                  className="block px-3 py-2 text-gray-700 hover:text-salon-pink hover:bg-salon-pink-light/20 rounded-md transition-colors duration-200"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Bookings
-                </Link>
-                <Link
-                  to="/admin/clients"
-                  className="block px-3 py-2 text-gray-700 hover:text-salon-pink hover:bg-salon-pink-light/20 rounded-md transition-colors duration-200"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Clients
-                </Link>
-              </>
+              ))
             ) : (
-              <>
-                <Link
-                  to="/bookings"
-                  className="block px-3 py-2 text-gray-700 hover:text-salon-pink hover:bg-salon-pink-light/20 rounded-md transition-colors duration-200"
-                  onClick={() => setIsOpen(false)}
+              navItems.guest.map((item) => (
+                <button
+                  key={item.href}
+                  onClick={() => {
+                    if (item.href.startsWith('#')) {
+                      const sectionId = item.href.substring(1);
+                      const section = document.getElementById(sectionId);
+                      if (section) {
+                        section.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }
+                    setIsOpen(false);
+                  }}
+                  className="w-full text-left block px-3 py-2 text-gray-700 hover:text-salon-pink hover:bg-salon-pink-light/20 rounded-md transition-colors duration-200"
                 >
-                  My Bookings
-                </Link>
-                <Link
-                  to="/profile"
-                  className="block px-3 py-2 text-gray-700 hover:text-salon-pink hover:bg-salon-pink-light/20 rounded-md transition-colors duration-200"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Profile
-                </Link>
-              </>
+                  {item.label}
+                </button>
+              ))
             )}
             {!isAuthenticated && (
               <div className="pt-4 border-t border-gray-200">
                 <Button variant="ghost" className="w-full justify-start" onClick={onOpenAuthModal}>
                   Sign In
                 </Button>
-                <Button className="w-full mt-2 bg-salon-pink hover:bg-salon-pink/90 text-gray-800" onClick={onOpenBookingModal}>
+                <Button className="w-full mt-2 bg-salon-pink hover:bg-salon-pink/90 text-white" onClick={onOpenBookingModal}>
                   Book Now
                 </Button>
               </div>

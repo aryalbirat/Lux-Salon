@@ -2,6 +2,13 @@ import { Button } from '@/components/ui/button';
 import { Calendar, Star, Users } from 'lucide-react';
 
 export const HeroSection = ({ onBookAppointment }: { onBookAppointment?: () => void }) => {
+  const handleViewServices = () => {
+    const servicesSection = document.getElementById('services');
+    if (servicesSection) {
+      servicesSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <section className="relative min-h-screen flex items-center gradient-bg overflow-hidden">
       {/* Background Pattern */}
@@ -36,7 +43,8 @@ export const HeroSection = ({ onBookAppointment }: { onBookAppointment?: () => v
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="border-salon-lavender  text-gray-800  bg-salon-pinkhover:bg-salon-pink/80 font-semibold px-8 py-4 text-lg"
+                className="border-salon-lavender text-gray-800 bg-salon-pink hover:bg-salon-pink/80 font-semibold px-8 py-4 text-lg"
+                onClick={handleViewServices}
               >
                 View Services
               </Button>
@@ -44,7 +52,8 @@ export const HeroSection = ({ onBookAppointment }: { onBookAppointment?: () => v
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-8 text-center">
-              <div>                <div className="text-2xl font-bold text-salon-lavender">500+</div>
+              <div>
+                <div className="text-2xl font-bold text-salon-lavender">500+</div>
                 <div className="text-sm text-gray-600">Happy Clients</div>
               </div>
               <div>

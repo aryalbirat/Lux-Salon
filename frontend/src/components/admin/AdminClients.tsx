@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Navigation } from '../Navigation';
 import { Button } from '../ui/button';
@@ -17,6 +18,7 @@ const AdminClients = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const notifications = useNotificationService();
+  const navigate = useNavigate();
 
   const fetchClients = async () => {
     try {
@@ -72,14 +74,13 @@ const AdminClients = () => {
                     <tr key={client._id}>
                       <td className="px-6 py-4 whitespace-nowrap">{client.name}</td>
                       <td className="px-6 py-4 whitespace-nowrap">{client.email}</td>
-                      <td className="px-6 py-4 whitespace-nowrap capitalize">{client.role}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap capitalize">{client.role}</td>                      <td className="px-6 py-4 whitespace-nowrap">
                         {new Date(client.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Button
                           variant="outline"
-                          onClick={() => window.location.href = `/admin/clients/${client._id}`}
+                          onClick={() => navigate(`/admin/clients/${client._id}`)}
                         >
                           View Details
                         </Button>

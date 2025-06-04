@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, Clock } from 'lucide-react';
-import axios from 'axios';
 import { format } from 'date-fns';
+import { useClientDetails } from '@/hooks/useClientDetails';
 
 interface ClientDetailsProps {
   isOpen: boolean;
@@ -11,66 +11,11 @@ interface ClientDetailsProps {
   clientId: string;
 }
 
-interface Booking {
-  _id: string;
-  service: string;
-  package: string;
-  date: string;
-  time: string;
-  status: string;
-  staff: {
-    name: string;
-  };
-}
-
-interface Client {
-  _id: string;
-  name: string;
-  email: string;
-  bookings: Booking[];
-}
-
 const ClientDetails = ({ isOpen, onClose, clientId }: ClientDetailsProps) => {
-  const [client, setClient] = useState<Client | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchClientDetails = async () => {
-      if (!clientId || !isOpen) return;
-      
-      try {
-        setLoading(true);
-        setError(null);
-        const token = localStorage.getItem('token');
-        
-        // Fetch client details
-        const clientResponse = await axios.get(`http://localhost:5000/api/users/${clientId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        // Fetch client's bookings
-        const bookingsResponse = await axios.get(`http://localhost:5000/api/bookings/user/${clientId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        // Combine the data
-        const clientData = {
-          ...clientResponse.data.data,
-          bookings: bookingsResponse.data.data || []
-        };
-
-        setClient(clientData);
-      } catch (error) {
-        console.error('Error fetching client details:', error);
-        setError('Failed to load client details. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchClientDetails();
-  }, [isOpen, clientId]);
+  const { client, loading, error } = useClientDetails(clientId, {
+    enabled: isOpen,
+    onError: () => onClose()
+  });
 
   const formatDate = (dateString: string) => {
     try {
@@ -95,30 +40,39 @@ const ClientDetails = ({ isOpen, onClose, clientId }: ClientDetailsProps) => {
     }
   };
 
-  // Reset state when dialog closes
-  useEffect(() => {
-    if (!isOpen) {
-      setClient(null);
-      setError(null);
-    }
-  }, [isOpen]);
-
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Client Details</DialogTitle>
         </DialogHeader>
 
-        {loading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-salon-pink"></div>
+        {loading && (
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-salon-pink" />
           </div>
-        ) : error ? (
-          <div className="text-center py-8 text-red-600">
-            {error}
+        )}
+
+        {error && (
+          <div className="text-center py-8">
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={onClose}
+              className="text-salon-pink hover:text-salon-pink/80 font-medium"
+            >
+              Back to Clients
+            </button>
           </div>
-        ) : client ? (
+        )}
+
+        {!loading && !error && client && (
           <div className="space-y-6">
             <div className="bg-gray-50 p-4 rounded-lg">
               <h3 className="font-semibold text-lg mb-2">Personal Information</h3>
@@ -138,7 +92,9 @@ const ClientDetails = ({ isOpen, onClose, clientId }: ClientDetailsProps) => {
                         <div className="flex justify-between items-start">
                           <div>
                             <h4 className="font-medium">{booking.service}</h4>
-                            <p className="text-sm text-gray-600">{booking.package}</p>
+                            {booking.package && (
+                              <p className="text-sm text-gray-600">{booking.package}</p>
+                            )}
                           </div>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
                             {booking.status}
@@ -152,9 +108,11 @@ const ClientDetails = ({ isOpen, onClose, clientId }: ClientDetailsProps) => {
                             <Clock className="h-4 w-4 mr-1" />
                             {booking.time}
                           </div>
-                          <div className="mt-1">
-                            Stylist: {booking.staff?.name || 'Not assigned'}
-                          </div>
+                          {booking.staff && (
+                            <div className="mt-1">
+                              Stylist: {booking.staff.name}
+                            </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -164,10 +122,6 @@ const ClientDetails = ({ isOpen, onClose, clientId }: ClientDetailsProps) => {
                 <p className="text-gray-500 text-center py-4">No bookings found</p>
               )}
             </div>
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            Client not found
           </div>
         )}
       </DialogContent>

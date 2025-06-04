@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Bookings from "./pages/Bookings";
+import ClientDetailsPage from "./pages/ClientDetails";
 import AdminDashboard from "./components/AdminDashboard";
 import AdminBookings from "./components/admin/AdminBookings";
 import AdminClients from "./components/admin/AdminClients";
@@ -48,8 +49,7 @@ const App = () => (
               <ProtectedRoute roles={['admin']}>
                 <AdminDashboard />
               </ProtectedRoute>
-            } />
-            <Route path="/admin/bookings" element={
+            } />            <Route path="/admin/bookings" element={
               <ProtectedRoute roles={['admin']}>
                 <AdminBookings />
               </ProtectedRoute>
@@ -57,6 +57,11 @@ const App = () => (
             <Route path="/admin/clients" element={
               <ProtectedRoute roles={['admin']}>
                 <AdminClients />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/clients/:id" element={
+              <ProtectedRoute roles={['admin']}>
+                <ClientDetailsPage />
               </ProtectedRoute>
             } />
             
