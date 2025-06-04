@@ -9,6 +9,7 @@ import { UserProfile } from '@/components/UserProfile';
 import { useNotificationService } from '@/services/notifications';
 import { BookingModal } from '@/components/BookingModal';
 import { Input } from '@/components/ui/input';
+import { useNavigate } from 'react-router-dom';
 import {
   Select,
   SelectContent,
@@ -31,8 +32,10 @@ interface Appointment {
   notes?: string;
 }
 
-const Dashboard = () => {  const { user } = useAuth();
+const Dashboard = () => {  
+  const { user } = useAuth();
   const notifications = useNotificationService();
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [filteredAppointments, setFilteredAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -237,7 +240,7 @@ const Dashboard = () => {  const { user } = useAuth();
             <Button 
               variant="ghost"
               className="flex items-center gap-2 border border-gray-200"
-              onClick={() => setShowProfileModal(true)}
+              onClick={() => navigate('/profile')}
             >
               <User size={16} />
               <span>Profile</span>
@@ -255,7 +258,7 @@ const Dashboard = () => {  const { user } = useAuth();
           <CardContent className="p-6">
             <Tabs defaultValue="upcoming" value={activeTab} onValueChange={setActiveTab}>
               <div className="flex items-center justify-between mb-6">
-                <TabsList>
+                <TabsList className='bg-salon-pink text-white rounded-lg p-1'>
                   <TabsTrigger value="upcoming">Upcoming Appointments</TabsTrigger>
                   <TabsTrigger value="past">Past Appointments</TabsTrigger>
                 </TabsList>
@@ -486,14 +489,7 @@ const Dashboard = () => {  const { user } = useAuth();
           </Card>
         </div>
       </div>
-      
-      {/* User Profile Modal */}
-      {showProfileModal && (
-        <UserProfile 
-          isOpen={showProfileModal} 
-          onClose={() => setShowProfileModal(false)} 
-        />
-      )}
+        {/* User Profile functionality moved to Profile page */}
     </div>
   );
 };
