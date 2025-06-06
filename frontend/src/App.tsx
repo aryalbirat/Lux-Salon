@@ -28,6 +28,28 @@ const App = () => (
             <Route path="/" element={<Index />} />
             
             {/* Protected Client Routes */}
+            <Route path="/client/dashboard" element={
+              <ProtectedRoute roles={['client']}>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/client/bookings" element={
+              <ProtectedRoute roles={['client']}>
+                <Bookings />
+              </ProtectedRoute>
+            } />
+            <Route path="/client/profile" element={
+              <ProtectedRoute roles={['client']}>
+                <Profile />
+              </ProtectedRoute>
+            } />
+            
+            {/* Backward compatibility routes */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute roles={['client', 'staff', 'admin']}>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
             <Route path="/bookings" element={
               <ProtectedRoute roles={['client', 'admin']}>
                 <Bookings />
@@ -38,18 +60,14 @@ const App = () => (
                 <Profile />
               </ProtectedRoute>
             } />
-            <Route path="/dashboard" element={
-              <ProtectedRoute roles={['client', 'staff', 'admin']}>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
             
             {/* Admin Routes */}
             <Route path="/admin" element={
               <ProtectedRoute roles={['admin']}>
                 <AdminDashboard />
               </ProtectedRoute>
-            } />            <Route path="/admin/bookings" element={
+            } />            
+            <Route path="/admin/bookings" element={
               <ProtectedRoute roles={['admin']}>
                 <AdminBookings />
               </ProtectedRoute>

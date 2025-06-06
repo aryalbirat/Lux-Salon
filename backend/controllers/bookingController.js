@@ -3,9 +3,9 @@ const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
 
 // @desc    Get all bookings
-// @route   GET /api/bookings
+// @route   GET /api/bookings/all
 // @access  Private/Admin
-exports.getBookings = asyncHandler(async (req, res, next) => {
+exports.getAllBookings = asyncHandler(async (req, res, next) => {
   let query;
 
   // Copy req.query
@@ -14,11 +14,6 @@ exports.getBookings = asyncHandler(async (req, res, next) => {
   // Fields to exclude
   const removeFields = ['select', 'sort', 'page', 'limit'];
   removeFields.forEach(param => delete reqQuery[param]);
-
-  // If not admin, show only user's bookings
-  if (req.user.role !== 'admin') {
-    reqQuery.user = req.user.id;
-  }
 
   // Create query string
   let queryStr = JSON.stringify(reqQuery);
@@ -37,7 +32,7 @@ exports.getBookings = asyncHandler(async (req, res, next) => {
     const sortBy = req.query.sort.split(',').join(' ');
     query = query.sort(sortBy);
   } else {
-    query = query.sort('-createdAt');
+    query = query.sort('-date');
   }
 
   // Pagination
@@ -119,6 +114,15 @@ exports.getBooking = asyncHandler(async (req, res, next) => {
 exports.createBooking = asyncHandler(async (req, res, next) => {
   // Add user to req.body
   req.body.user = req.user.id;
+  
+  // Set default values for required fields if not provided
+  if (!req.body.staff) {
+    req.body.staff = 'Available Stylist';
+  }
+  
+  if (!req.body.package) {
+    req.body.package = 'Standard Package';
+  }
 
   const booking = await Booking.create(req.body);
 
@@ -169,7 +173,7 @@ exports.deleteBooking = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse(`Not authorized to delete this booking`, 401));
   }
 
-  await booking.remove();
+  await Booking.deleteOne({ _id: booking._id });
 
   res.status(200).json({
     success: true,
@@ -177,185 +181,94 @@ exports.deleteBooking = asyncHandler(async (req, res, next) => {
   });
 });
 
-exports.getMyBookings = async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-
-    console.log('Fetching bookings for user:', req.user.id);
+// Get user's current bookings
+exports.getMyBookings = asyncHandler(async (req, res, next) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+  
+  // Get current date at start of day
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const bookings = await Booking.find({
+    user: req.user.id,
+    date: { $gte: today }
+  })
+    .sort({ date: 1, time: 1 })
+    .skip(skip)
+    .limit(limit)
+    .populate('user', 'name email');
     
-    // Get current date at start of day
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  const total = await Booking.countDocuments({
+    user: req.user.id,
+    date: { $gte: today }
+  });
+  
+  res.json({
+    success: true,
+    data: bookings,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit)
+    }
+  });
+});
+
+// Get user's booking history
+exports.getBookingHistory = asyncHandler(async (req, res, next) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+  
+  // Get current date at start of day
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const bookings = await Booking.find({
+    user: req.user.id,
+    date: { $lt: today }
+  })
+    .sort({ date: -1, time: -1 })
+    .skip(skip)
+    .limit(limit)
+    .populate('user', 'name email');
     
-    const bookings = await Booking.find({ 
-      user: req.user.id,
-      date: { $gte: today }
-    })
-      .sort({ date: 1, time: 1 })
-      .skip(skip)
-      .limit(limit)
-      .populate('user', 'name email');
-
-    const total = await Booking.countDocuments({ 
-      user: req.user.id,
-      date: { $gte: today }
-    });
-
-    console.log('Current bookings found:', bookings.length);
-    
-    res.json({
-      success: true,
-      data: bookings,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    });
-  } catch (err) {
-    console.error('Error fetching bookings:', err);
-    res.status(400).json({
-      success: false,
-      message: 'Error fetching bookings'
-    });
-  }
-};
-
-exports.getBookingHistory = async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-
-    console.log('Fetching booking history for user:', req.user.id);
-    
-    // Get current date at start of day
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const bookings = await Booking.find({ 
-      user: req.user.id,
-      date: { $lt: today }
-    })
-      .sort({ date: -1, time: -1 })
-      .skip(skip)
-      .limit(limit)
-      .populate('user', 'name email');
-
-    const total = await Booking.countDocuments({ 
-      user: req.user.id,
-      date: { $lt: today }
-    });
-
-    console.log('Historical bookings found:', bookings.length);
-    
-    res.json({
-      success: true,
-      data: bookings,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    });
-  } catch (err) {
-    console.error('Error fetching booking history:', err);
-    res.status(400).json({
-      success: false,
-      message: 'Error fetching booking history'
-    });
-  }
-};
-
-// Admin: Get all bookings
-exports.getAllBookings = async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-    
-    const bookings = await Booking.find()
-      .sort({ date: -1, time: -1 })
-      .skip(skip)
-      .limit(limit)
-      .populate('user', 'name email');
-
-    const total = await Booking.countDocuments();
-
-    res.json({
-      success: true,
-      data: bookings,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
-    });
-  } catch (err) {
-    console.error('Error fetching all bookings:', err);
-    res.status(400).json({
-      success: false,
-      message: 'Error fetching all bookings'
-    });
-  }
-};
+  const total = await Booking.countDocuments({
+    user: req.user.id,
+    date: { $lt: today }
+  });
+  
+  res.json({
+    success: true,
+    data: bookings,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit)
+    }
+  });
+});
 
 // Admin: Update booking status
-exports.updateBookingStatus = async (req, res) => {
-  try {
-    const { status } = req.body;
-    const booking = await Booking.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    ).populate('user', 'name email');
-
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message: 'Booking not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      data: booking
-    });
-  } catch (err) {
-    console.error('Error updating booking status:', err);
-    res.status(400).json({
-      success: false,
-      message: 'Error updating booking status'
-    });
+exports.updateBookingStatus = asyncHandler(async (req, res, next) => {
+  const { status } = req.body;
+  
+  const booking = await Booking.findByIdAndUpdate(
+    req.params.id,
+    { status },
+    { new: true }
+  ).populate('user', 'name email');
+  
+  if (!booking) {
+    return next(new ErrorResponse(`No booking found with id of ${req.params.id}`, 404));
   }
-};
-
-// Admin: Delete booking
-exports.deleteBooking = async (req, res) => {
-  try {
-    const booking = await Booking.findByIdAndDelete(req.params.id);
-
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message: 'Booking not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Booking deleted successfully'
-    });
-  } catch (err) {
-    console.error('Error deleting booking:', err);
-    res.status(400).json({
-      success: false,
-      message: 'Error deleting booking'
-    });
-  }
-}; 
+  
+  res.json({
+    success: true,
+    data: booking
+  });
+});

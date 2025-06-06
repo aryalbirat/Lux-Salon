@@ -22,7 +22,7 @@ const bookingSchema = new mongoose.Schema({
   },
   package: {
     type: String,
-    required: true
+    default: 'Standard Package'
   },
   packageId: {
     type: Number
@@ -43,13 +43,8 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'confirmed', 'cancelled', 'completed'],
     default: 'pending'
-  },
-  notes: {
+  },  notes: {
     type: String
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
   }
 }, {
   timestamps: true

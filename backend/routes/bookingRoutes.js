@@ -6,7 +6,6 @@ const {
   getAllBookings,
   updateBookingStatus,
   deleteBooking,
-  getBookings,
   getBooking,
   updateBooking,
   getUserBookings
@@ -26,12 +25,6 @@ router.post('/', createBooking);
 // Admin routes
 router.get('/all', authorize('admin'), getAllBookings);
 router.put('/:id/status', authorize('admin'), updateBookingStatus);
-router.delete('/:id', authorize('admin'), deleteBooking);
-
-// Get bookings for current user
-router.get('/me', getBookings);
-
-// Get bookings for specific user (admin only)
 router.get('/user/:userId', authorize('admin'), getUserBookings);
 
 // Get single booking
@@ -40,7 +33,7 @@ router.get('/:id', getBooking);
 // Update booking
 router.put('/:id', updateBooking);
 
-// Delete booking
+// Delete booking (for both regular users and admins)
 router.delete('/:id', deleteBooking);
 
 module.exports = router; 

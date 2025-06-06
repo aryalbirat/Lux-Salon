@@ -29,6 +29,11 @@ export const Navigation = ({ onOpenAuthModal, onOpenBookingModal }: NavigationPr
       { label: 'Testimonials', href: '#testimonials' },
       { label: 'Contact', href: '#contact' }
     ],
+    client: [
+      { label: 'Dashboard', href: '/client/dashboard' },
+      { label: 'My Bookings', href: '/client/bookings' },
+      { label: 'Profile', href: '/client/profile' }
+    ],
     admin: [
       { label: 'Dashboard', href: '/admin' },
       { label: 'Bookings', href: '/admin/bookings' },
@@ -69,6 +74,13 @@ export const Navigation = ({ onOpenAuthModal, onOpenBookingModal }: NavigationPr
     }
   }, [location.hash]);
 
+  // Determine which navigation items to show
+  const getNavItems = () => {
+    if (!isAuthenticated) return navItems.guest;
+    if (isAdmin) return navItems.admin;
+    return navItems.client;
+  };
+
   return (
     <nav className="bg-white/90 backdrop-blur-md shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -82,8 +94,22 @@ export const Navigation = ({ onOpenAuthModal, onOpenBookingModal }: NavigationPr
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            {isAdmin ? (
-              navItems.admin.map((item) => (
+            {getNavItems().map((item) => (
+              item.href.startsWith('#') ? (
+                <button
+                  key={item.href}
+                  onClick={() => {
+                    const sectionId = item.href.substring(1);
+                    const section = document.getElementById(sectionId);
+                    if (section) {
+                      section.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
+                  className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-salon-pink"
+                >
+                  {item.label}
+                </button>
+              ) : (
                 <Link
                   key={item.href}
                   to={item.href}
@@ -91,26 +117,8 @@ export const Navigation = ({ onOpenAuthModal, onOpenBookingModal }: NavigationPr
                 >
                   {item.label}
                 </Link>
-              ))
-            ) : (
-              navItems.guest.map((item) => (
-                <button
-                  key={item.href}
-                  onClick={() => {
-                    if (item.href.startsWith('#')) {
-                      const sectionId = item.href.substring(1);
-                      const section = document.getElementById(sectionId);
-                      if (section) {
-                        section.scrollIntoView({ behavior: 'smooth' });
-                      }
-                    }
-                  }}
-                  className="text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 border-transparent hover:border-salon-pink"
-                >
-                  {item.label}
-                </button>
-              ))
-            )}
+              )
+            ))}
           </div>
 
           {/* User Actions */}
@@ -129,13 +137,6 @@ export const Navigation = ({ onOpenAuthModal, onOpenBookingModal }: NavigationPr
               </>
             ) : (
               <div className="flex items-center space-x-2">
-                {isAdmin && (
-                  <Link to="/admin">
-                    <Button variant="ghost" size="sm">
-                      Dashboard
-                    </Button>
-                  </Link>
-                )}
                 <Button 
                   variant="ghost" 
                   size="sm"
@@ -174,8 +175,23 @@ export const Navigation = ({ onOpenAuthModal, onOpenBookingModal }: NavigationPr
           isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0 overflow-hidden"
         )}>
           <div className="px-2 pt-2 pb-3 space-y-1 bg-white rounded-lg shadow-lg mt-2">
-            {isAdmin ? (
-              navItems.admin.map((item) => (
+            {getNavItems().map((item) => (
+              item.href.startsWith('#') ? (
+                <button
+                  key={item.href}
+                  onClick={() => {
+                    const sectionId = item.href.substring(1);
+                    const section = document.getElementById(sectionId);
+                    if (section) {
+                      section.scrollIntoView({ behavior: 'smooth' });
+                    }
+                    setIsOpen(false);
+                  }}
+                  className="w-full text-left block px-3 py-2 text-gray-700 hover:text-salon-pink hover:bg-salon-pink-light/20 rounded-md transition-colors duration-200"
+                >
+                  {item.label}
+                </button>
+              ) : (
                 <Link
                   key={item.href}
                   to={item.href}
@@ -184,27 +200,8 @@ export const Navigation = ({ onOpenAuthModal, onOpenBookingModal }: NavigationPr
                 >
                   {item.label}
                 </Link>
-              ))
-            ) : (
-              navItems.guest.map((item) => (
-                <button
-                  key={item.href}
-                  onClick={() => {
-                    if (item.href.startsWith('#')) {
-                      const sectionId = item.href.substring(1);
-                      const section = document.getElementById(sectionId);
-                      if (section) {
-                        section.scrollIntoView({ behavior: 'smooth' });
-                      }
-                    }
-                    setIsOpen(false);
-                  }}
-                  className="w-full text-left block px-3 py-2 text-gray-700 hover:text-salon-pink hover:bg-salon-pink-light/20 rounded-md transition-colors duration-200"
-                >
-                  {item.label}
-                </button>
-              ))
-            )}
+              )
+            ))}
             {!isAuthenticated && (
               <div className="pt-4 border-t border-gray-200">
                 <Button variant="ghost" className="w-full justify-start" onClick={onOpenAuthModal}>
