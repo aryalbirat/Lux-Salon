@@ -1,4 +1,4 @@
-# 💅 LuxSalon - Beauty Salon Booking System
+# 💅 BlissSalon - Beauty Salon Booking System
 
 <div align="center">
 
@@ -12,7 +12,7 @@
 
 </div>
 
-LuxSalon is a sophisticated, full-stack beauty salon booking application that empowers clients to securely schedule services with their preferred stylists. Built with modern web technologies, the platform offers an elegant user interface and robust backend functionality.
+BlissSalon is a sophisticated, full-stack beauty salon booking application that empowers clients to securely schedule services with their preferred stylists. Built with modern web technologies, the platform offers an elegant user interface and robust backend functionality.
 
 ## ✨ Features
 
@@ -84,7 +84,7 @@ LuxSalon is a sophisticated, full-stack beauty salon booking application that em
    ```
    PORT=5000
    NODE_ENV=development
-   MONGO_URI=mongodb://localhost:27017/LuxSalon
+   MONGO_URI=mongodb://localhost:27017/BlissSalon
    JWT_SECRET=your_jwt_secret
    JWT_EXPIRE=1d
    ```
@@ -135,7 +135,7 @@ Other user accounts (staff and clients) can be created through the registration 
 ## 📂 Project Structure
 
 ```
-LuxSalon/
+BlissSalon/
 ├── backend/                # Node.js + Express backend
 │   ├── config/             # Configuration files
 │   ├── controllers/        # Request handlers
@@ -160,7 +160,7 @@ LuxSalon/
 
 ## 📱 Responsive Design
 
-LuxSalon is fully responsive and optimized for:
+BlissSalon is fully responsive and optimized for:
 - Desktop browsers
 - Tablets
 - Mobile devices
