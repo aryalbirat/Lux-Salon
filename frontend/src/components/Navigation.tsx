@@ -88,7 +88,7 @@ export const Navigation = ({ onOpenAuthModal, onOpenBookingModal }: NavigationPr
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link to="/">
-              <h1 className="text-2xl font-bold text-gradient">LuxSalon</h1>
+              <h1 className="text-2xl font-bold text-gradient">BlissSalon</h1>
             </Link>
           </div>
 

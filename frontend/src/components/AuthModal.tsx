@@ -178,7 +178,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
       
       notifications.showSuccess(
         'Registration successful!',
-        `Welcome to LuxSalon, ${response.user.name}!`
+        `Welcome to BlissSalon, ${response.user.name}!`
       );
 
       // Process any pending booking
@@ -214,7 +214,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
     <Dialog open={isOpen} onOpenChange={onClose}>      <DialogContent className="bg-violer-2 sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="text-2xl bg-slate-200 font-bold text-center text-gradient">
-            Welcome to LuxSalon
+            Welcome to BlissSalon
           </DialogTitle>
           <DialogDescription>
             Sign in to your account or create a new one to manage your bookings

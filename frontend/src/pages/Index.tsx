@@ -197,7 +197,7 @@ const Index = () => {
                     </div>
                     <div className="flex items-center space-x-3">
                       <Mail className="h-5 w-5 text-salon-pink" />
-                      <span>hello@luxsalon.com</span>
+                      <span>hello@BlissSalon.com</span>
                     </div>
                   </div>
                 </CardContent>
@@ -262,7 +262,7 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-8">
             <div>
-              <h3 className="text-2xl font-bold text-gradient mb-4">LuxSalon</h3>
+              <h3 className="text-2xl font-bold text-gradient mb-4">BlissSalon</h3>
               <p className="text-gray-300">
                 Where beauty meets luxury. Experience the finest in beauty and wellness services.
               </p>
@@ -287,7 +287,7 @@ const Index = () => {
             </div>
           </div>
           <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-300">
-            <p>&copy; 2024 LuxSalon. All rights reserved.</p>
+            <p>&copy; 2024 BlissSalon. All rights reserved.</p>
           </div>
         </div>
       </footer>      <BookingModal 
