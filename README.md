@@ -7,12 +7,13 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![React](https://img.shields.io/badge/React-18-61DAFB.svg?logo=react)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6.svg?logo=typescript)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-18-339933.svg?logo=node.js)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express-4.18-000000.svg?logo=express)](https://expressjs.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-7.0-47A248.svg?logo=mongodb)](https://www.mongodb.com/)
 
 </div>
 
-BlissSalon is a sophisticated, full-stack beauty salon booking application that empowers clients to securely schedule services with their preferred stylists. Built with modern web technologies, the platform offers an elegant user interface and robust backend functionality.
+BlissSalon is a full-stack beauty salon booking application that empowers clients to securely schedule services with their preferred stylists. Built with modern web technologies, the platform offers an elegant user interface and robust backend functionality.
 
 ## ✨ Features
 
@@ -167,7 +168,7 @@ BlissSalon is fully responsive and optimized for:
 
 ## 🛡️ License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
 
 ## 🙏 Acknowledgements
 
