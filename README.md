@@ -1,117 +1,179 @@
-# LuxSalon - Salon Booking System
+# 💅 LuxSalon - Beauty Salon Booking System
 
-LuxSalon is a comprehensive salon booking application with JWT authentication, allowing clients to securely book services with their preferred stylists.
+<div align="center">
 
-## Features
+*Elevate your beauty experience with our premium salon booking platform*
 
-- **User Authentication**
-  - Secure JWT-based authentication
-  - User registration and login
-  - Role-based access control (client, staff, admin)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![React](https://img.shields.io/badge/React-18-61DAFB.svg?logo=react)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6.svg?logo=typescript)](https://www.typescriptlang.org/)
+[![Express](https://img.shields.io/badge/Express-4.18-000000.svg?logo=express)](https://expressjs.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-7.0-47A248.svg?logo=mongodb)](https://www.mongodb.com/)
 
-- **Booking System**
-  - Appointment scheduling
-  - Service selection
-  - Staff member selection
-  - Time slot availability
+</div>
 
-- **Client Dashboard**
-  - View upcoming appointments
-  - Booking history
-  - Profile management
+LuxSalon is a sophisticated, full-stack beauty salon booking application that empowers clients to securely schedule services with their preferred stylists. Built with modern web technologies, the platform offers an elegant user interface and robust backend functionality.
 
-- **Staff Features**
-  - View assigned appointments
-  - Mark appointments as completed
+## ✨ Features
 
-- **Admin Features**
-  - Manage services
-  - Manage staff
-  - View all appointments
+### 👤 User Authentication & Authorization
+- **Secure JWT Authentication**: Industry-standard security for user sessions
+- **Multi-Role System**: Separate interfaces for clients, staff, and administrators
+- **Protected Routes**: Role-based access control to application features
 
-## Tech Stack
+### 📅 Booking System
+- **Intuitive Appointment Scheduling**: Multi-step booking process
+- **Service Catalog**: Browse and select from a variety of beauty services
+- **Staff Selection**: Choose your preferred stylist
+- **Smart Availability**: Real-time time slot availability
+- **Appointment Management**: View, reschedule, or cancel bookings
+
+### 👩‍💼 Client Experience
+- **Personalized Dashboard**: Quick overview of upcoming appointments
+- **Booking History**: Complete record of past services
+- **Profile Management**: Update personal information securely
+
+### 💇‍♀️ Staff Portal
+- **Appointment Tracking**: View all assigned bookings
+- **Service Management**: Mark appointments as completed
+- **Schedule Management**: View daily and weekly schedules
+
+### 🔑 Administration
+- **Full System Control**: Comprehensive management interface
+- **Client Management**: View and manage all clients
+- **Staff Oversight**: Manage staff information and assignments
+- **Service Control**: Add, update, or remove salon services
+
+## 🛠️ Technology Stack
 
 ### Frontend
-- React with TypeScript
-- React Router for navigation
-- Tailwind CSS for styling
-- Shadcn UI components
-- Context API for state management
+- **Framework**: React with TypeScript
+- **Routing**: React Router for seamless SPA navigation
+- **UI Components**: Shadcn UI (built on Radix UI primitives)
+- **Styling**: Tailwind CSS with custom salon-themed design
+- **State Management**: React Context API
+- **Forms**: Custom form implementations 
+- **Notifications**: Toast notification system with sonner
 
 ### Backend
-- Node.js with Express
-- MongoDB with Mongoose
-- JWT for authentication
-- bcrypt for password hashing
+- **Server**: Node.js with Express
+- **Database**: MongoDB with Mongoose ODM
+- **Authentication**: JWT tokens with Bearer authentication
+- **Security**: bcryptjs for password hashing
+- **API Design**: RESTful API architecture
 
-## Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
 - Node.js v18+
-- MongoDB
+- MongoDB (local or Atlas)
 
 ### Backend Setup
 
 1. Navigate to the backend directory:
-   ```
+   ```powershell
    cd backend
    ```
 
 2. Install dependencies:
-   ```
+   ```powershell
    npm install
    ```
 
-3. Create .env file with the following variables:
+3. Create .env file in the backend directory with the following variables:
    ```
    PORT=5000
    NODE_ENV=development
-   MONGO_URI=mongodb://localhost:27017/luxsalon
+   MONGO_URI=mongodb://localhost:27017/LuxSalon
    JWT_SECRET=your_jwt_secret
-   JWT_EXPIRE=30d
-   JWT_COOKIE_EXPIRE=30
+   JWT_EXPIRE=1d
    ```
 
-4. Seed the database with initial data:
-   ```
-   npm run seed
-   ```
-
-5. Start the server:
-   ```
+4. Start the development server:
+   ```powershell
    npm run dev
    ```
 
 ### Frontend Setup
 
 1. Navigate to the frontend directory:
-   ```
+   ```powershell
    cd frontend
    ```
 
 2. Install dependencies:
-   ```
+   ```powershell
    npm install
    ```
 
 3. Start the development server:
-   ```
+   ```powershell
    npm run dev
    ```
 
-## Default Users
+4. Access the application at [http://localhost:8000](http://localhost:8000)
 
-The seed data creates the following users:
+## 👥 Default User Accounts
 
-- **Admin:** admin@luxsalon.com / password123
-- **Staff:** john@luxsalon.com / password123 and sarah@luxsalon.com / password123
-- **Client:** client@example.com / password123
+The system comes with a pre-configured admin account:
 
-## JWT Authentication Flow
+| Role  | Email | Password | Access |
+|-------|-------|----------|--------|
+| Admin | admin@salon.com | Admin@123!Secure | Full system access |
 
-1. User registers or logs in
-2. Server validates credentials and issues a JWT token
-3. Token is stored in localStorage
-4. API requests include the token in Authorization header
-5. Protected routes verify the token before granting access
-6. On successful authentication, user is redirected to their dashboard based on role
+Other user accounts (staff and clients) can be created through the registration functionality.
+
+## 🔒 Authentication Flow
+
+1. User submits login credentials or registers a new account
+2. Server validates credentials and generates a JWT token
+3. Token is stored securely in the client
+4. Protected API requests include the token in the Authorization header
+5. Server validates token for protected routes
+6. User is redirected to their role-specific dashboard
+
+## 📂 Project Structure
+
+```
+LuxSalon/
+├── backend/                # Node.js + Express backend
+│   ├── config/             # Configuration files
+│   ├── controllers/        # Request handlers
+│   ├── middleware/         # Custom middleware
+│   ├── models/             # Mongoose schemas
+│   ├── routes/             # API routes
+│   └── utils/              # Utility functions
+│
+└── frontend/               # React + TypeScript frontend
+    ├── public/             # Static assets
+    └── src/
+        ├── components/     # UI components
+        │   ├── admin/      # Admin-specific components
+        │   └── ui/         # Shadcn UI components
+        ├── contexts/       # React context providers
+        ├── data/           # Static data sources
+        ├── hooks/          # Custom React hooks
+        ├── lib/            # Utility functions
+        ├── pages/          # Page components
+        └── services/       # API service functions
+```
+
+## 📱 Responsive Design
+
+LuxSalon is fully responsive and optimized for:
+- Desktop browsers
+- Tablets
+- Mobile devices
+
+## 🛡️ License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🙏 Acknowledgements
+
+- [React](https://reactjs.org/)
+- [Express](https://expressjs.com/)
+- [MongoDB](https://www.mongodb.com/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Shadcn UI](https://ui.shadcn.com/)
+- [Radix UI](https://www.radix-ui.com/)
