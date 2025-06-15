@@ -2,7 +2,7 @@
 
 <div align="center">
 
-*Elevate your beauty experience with our premium salon booking platform*
+*Elevate your beauty experience with our premium salon booking platform.*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![React](https://img.shields.io/badge/React-18-61DAFB.svg?logo=react)](https://reactjs.org/)
